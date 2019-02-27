@@ -15,8 +15,8 @@
 /**
  *	Dependencies
  */
- #include <openssl/ssl.h>
- 
+#include <openssl/ssl.h>
+
 /**
  *  Beginnig of namespace
  */
@@ -123,7 +123,7 @@ public:
     {
         // number of bytes to that still fit in the buffer
         size_t bytes = expected - _size;
-        
+
         // read data
         auto result = OpenSSL::SSL_read(ssl, (void *)(_data + _size), bytes);
         

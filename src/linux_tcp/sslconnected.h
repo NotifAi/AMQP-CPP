@@ -110,14 +110,18 @@ private:
      */
     TcpState *repeat(const Monitor &monitor, enum State state, int error)
     {
-        // if we are not able to repeat the call, we are in an error state and should tear down the connection
-        if (!repeat(state, error)) return monitor.valid() ? new TcpClosed(this) : nullptr;
+        // if we are able to repeat the call, we are still in the correct state
+        if (repeat(state, error))
+        {
+            // if the socket was closed in the meantime and we are not sending anything any more, we should initialize the shutdown sequence
+            if (_closed && _state == state_idle) return new SslShutdown(this, std::move(_ssl));
 
-        // if the socket was closed in the meantime and we are not sending anything any more, we should initialize the shutdown sequence
-        if (_closed && _state == state_idle) return new SslShutdown(this, std::move(_ssl));
-        
-        // otherwise, we just continue as we were, since the calls should be repeated in the future
-        else return this;
+                // otherwise, we just continue as we were, since the calls should be repeated in the future
+            else return this;
+        }
+
+        // if the monitor is still valid, we should tear down the connection because we are unable to repeat the call
+        return monitor.valid() ? new TcpClosed(this) : nullptr;
     }
 
     /**
@@ -167,7 +171,7 @@ private:
             _state = state_error;
 
             // report an error to user-space
-            _parent->onError(this, "ssl protocol error");
+            _parent->onError(this, std::string("ssl protocol error: " + std::to_string(error) + " state: " + std::to_string(state)).c_str());
 
             // ssl level error, we have to tear down the tcp connection
             return false;
@@ -257,9 +261,10 @@ private:
             
             // we may have to repeat the operation on failure
             if (result > 0) continue;
-            
-            // check for error
+
+            // Check for error and clear the error queue before the next TLS/SSL I/O operation
             auto error = OpenSSL::SSL_get_error(_ssl, result);
+            OpenSSL::ERR_clear_error();
 
             // the operation failed, we may have to repeat our call
             return repeat(monitor, state_sending, error);
@@ -277,10 +282,6 @@ private:
      */
     TcpState *receive(const Monitor &monitor)
     {
-        // we are going to check for errors after the openssl operations, so we make 
-        // sure that the error queue is currently completely empty
-        OpenSSL::ERR_clear_error();
-
         // start a loop
         do
         {
@@ -291,7 +292,14 @@ private:
             auto result = _in.receivefrom(_ssl, _parent->expected());
             
             // if this is a failure, we are going to repeat the operation
-            if (result <= 0) return repeat(monitor, state_receiving, OpenSSL::SSL_get_error(_ssl, result));
+            if (result <= 0)
+            {
+                // Check for error and clear the error queue before the next TLS/SSL I/O operation
+                auto error = OpenSSL::SSL_get_error(_ssl, result);
+                OpenSSL::ERR_clear_error();
+
+                return repeat(monitor, state_receiving, error);
+            }
 
             // go process the received data
             auto *nextstate = parse(monitor, result);
@@ -392,6 +400,9 @@ public:
             
         // check for error
         auto error = OpenSSL::SSL_get_error(_ssl, result);
+
+        // clear the error queue before the next TLS/SSL I/O operation
+        OpenSSL::ERR_clear_error();
 
         // put the data in the outgoing buffer
         _out.add(buffer, size);
