@@ -26,7 +26,22 @@ namespace AMQP {
  */
 class Login
 {
+public:
+    /**
+     *  Login mechanism enum
+     */
+    enum class Mechanism {
+        PLAIN,
+        EXTERNAL
+    };
+
 private:
+    /**
+     *  The login mechanism
+     *  @var LoginMechanism
+     */
+    Mechanism   _mechanism;
+
     /**
      *  The username
      *  @var string
@@ -39,12 +54,11 @@ private:
      */
     std::string _password;
 
-
 public:
     /**
      *  Default constructor
      */
-    Login() : _user("guest"), _password("guest") {}
+    Login() : _mechanism(Mechanism::PLAIN), _user("guest"), _password("guest") {}
 
     /**
      *  Constructor
@@ -52,7 +66,11 @@ public:
      *  @param  password
      */
     Login(std::string user, std::string password) :
-        _user(std::move(user)), _password(std::move(password)) {}
+         Login()
+     {
+         _user = std::move(user);
+         _password = std::move(password);
+     }
 
     /**
      *  Constructor
@@ -61,6 +79,13 @@ public:
      */
     Login(const char *user, const char *password) :
         _user(user), _password(password) {}
+
+    /**
+     *  Constructor for EXTERNAL mechanism
+     */
+    Login(Mechanism mechanism) : Login() {
+        _mechanism = mechanism;
+    }
 
     /**
      *  Destructor
@@ -104,16 +129,37 @@ public:
     }
 
     /**
+         *  Retrieve login mechanism string representation
+         *  @return LoginMechanism
+         */
+    std::string mechanismRepr() const
+    {
+        switch (_mechanism)
+        {
+        case Mechanism::PLAIN:
+            return "PLAIN";
+        case Mechanism::EXTERNAL:
+            return "EXTERNAL";
+        default:
+            return "";
+        }
+    }
+
+    /**
      *  String representation in SASL PLAIN mode
      *  @return string
      */
-    std::string saslPlain() const
+    std::string stringRepr() const
     {
         // we need an initial string
         std::string result("\0", 1);
 
-        // append other elements
-        return result.append(_user).append("\0",1).append(_password);
+        if (_mechanism == Mechanism::PLAIN) {
+            // append login and password info for plain login
+            return result.append(_user).append("\0",1).append(_password);
+        }
+
+        return result;
     }
     
     /**
