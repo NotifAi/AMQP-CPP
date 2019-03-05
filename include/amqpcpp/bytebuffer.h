@@ -64,13 +64,13 @@ public:
     /**
      *  Destructor
      */
-    virtual ~ByteBuffer() {}
+    virtual ~ByteBuffer() = default;
 
     /**
      *  Move assignment operator
      *  @param  that
      */
-    ByteBuffer &operator=(ByteBuffer &&that)
+    ByteBuffer &operator=(ByteBuffer &&that) noexcept
     {
         // skip self-assignment
         if (this == &that) return *this;
@@ -91,7 +91,7 @@ public:
      *  Total size of the buffer
      *  @return size_t
      */
-    virtual size_t size() const override
+    size_t size() const override
     {
         return _size;
     }
@@ -101,7 +101,7 @@ public:
      *  @param  pos         position in the buffer
      *  @return char        value of the byte in the buffer
      */
-    virtual char byte(size_t pos) const override
+    char byte(size_t pos) const override
     {
         return _data[pos];
     }
@@ -112,7 +112,7 @@ public:
      *  @param  size        number of continuous bytes
      *  @return char*
      */
-    virtual const char *data(size_t pos, size_t size) const override
+    const char *data(size_t pos, size_t size) const override
     {
         // make sure compilers dont complain about unused parameters
         (void) size;
@@ -128,7 +128,7 @@ public:
      *  @param  buffer      buffer to copy into
      *  @return size_t      pointer to buffer
      */
-    virtual void *copy(size_t pos, size_t size, void *buffer) const override
+    void *copy(size_t pos, size_t size, void *buffer) const override
     {
         return memcpy(buffer, _data + pos, size);
     }

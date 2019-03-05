@@ -31,48 +31,45 @@ class Monitor;
 /**
  *  Class definition
  */
-class Watchable
-{
-private:
-    /**
-     *  The monitors
-     *  @var std::vector
-     */
-    std::vector<Monitor*> _monitors;
-
-    /**
-     *  Add a monitor
-     *  @param  monitor
-     */
-    void add(Monitor *monitor)
-    {
-        // add to the vector
-        _monitors.push_back(monitor);
-    }
-
-    /**
-     *  Remove a monitor
-     *  @param  monitor
-     */
-    void remove(Monitor *monitor)
-    {
-        // put the monitor at the end of the vector
-        auto iter = std::remove(_monitors.begin(), _monitors.end(), monitor);
-
-        // make the vector smaller
-        _monitors.erase(iter, _monitors.end());
-    }
-
+class Watchable {
 public:
-    /**
-     *  Destructor
-     */
-    virtual ~Watchable();
+	/**
+	 *  Destructor
+	 */
+	virtual ~Watchable();
 
-    /**
-     *  Only a monitor has full access
-     */
-    friend class Monitor;
+private:
+	/**
+	 *  Add a monitor
+	 *  @param  monitor
+	 */
+	void add(Monitor *monitor) {
+		// add to the vector
+		_monitors.push_back(monitor);
+	}
+
+	/**
+	 *  Remove a monitor
+	 *  @param  monitor
+	 */
+	void remove(Monitor *monitor) {
+		// put the monitor at the end of the vector
+		auto iter = std::remove(_monitors.begin(), _monitors.end(), monitor);
+
+		// make the vector smaller
+		_monitors.erase(iter, _monitors.end());
+	}
+private:
+	/**
+	 *  The monitors
+	 *  @var std::vector
+	 */
+	std::vector<Monitor *> _monitors;
+
+	/**
+	 *  Only a monitor has full access
+	 */
+	friend class Monitor;
 };
 
 /**

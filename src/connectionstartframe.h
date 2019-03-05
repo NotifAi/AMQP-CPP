@@ -154,7 +154,8 @@ public:
     const Table& capabilities() const
     {
         // retrieve the capabilities
-        return _properties.get("capabilities");
+        // FIXME: typecast
+        return (Table &)_properties.get("capabilities");
     }
 
     /**

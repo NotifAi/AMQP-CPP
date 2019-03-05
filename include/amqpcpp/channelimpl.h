@@ -189,7 +189,7 @@ public:
     /**
      *  Destructor
      */
-    virtual ~ChannelImpl();
+    ~ChannelImpl() override;
 
     /**
      *  No assignments of other channels

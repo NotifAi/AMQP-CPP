@@ -18,7 +18,7 @@
  *  Dependencies
  */
 #include <cstdint>
-#include <stddef.h>
+#include <cstddef>
 
 /**
  *  Set up namespace

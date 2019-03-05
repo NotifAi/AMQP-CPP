@@ -178,7 +178,7 @@ public:
     /**
      *  Destructor
      */
-    virtual ~ConnectionImpl();
+    ~ConnectionImpl() override;
 
     /**
      *  No assignments of other connections

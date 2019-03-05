@@ -56,7 +56,7 @@ protected:
      *  @param  data
      *  @param  size
      */
-    virtual void append(const void *data, size_t size) override
+    void append(const void *data, size_t size) override
     {
         // copy into the buffer
         memcpy(_buffer + _size, data, size);
@@ -70,7 +70,7 @@ public:
      *  Constructor
      *  @param  frame
      */
-    CopiedBuffer(const Frame &frame) :
+    explicit CopiedBuffer(const Frame &frame) :
         _capacity(frame.totalSize()),
         _buffer((char *)malloc(_capacity)) 
     {
@@ -91,7 +91,7 @@ public:
      *  Move constructor
      *  @param  that
      */
-    CopiedBuffer(CopiedBuffer &&that) :
+    CopiedBuffer(CopiedBuffer &&that) noexcept :
         _capacity(that._capacity),
         _buffer(that._buffer),
         _size(that._size)

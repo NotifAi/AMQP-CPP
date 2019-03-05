@@ -62,7 +62,7 @@ public:
      *  @param  channel     Pointer to the channel
      *  @param  failed      Are we already failed?
      */
-    DeferredCancel(ChannelImpl *channel, bool failed = false) : 
+    explicit DeferredCancel(ChannelImpl *channel, bool failed = false) :
         Deferred(failed), _channel(channel) {}
 
 public:

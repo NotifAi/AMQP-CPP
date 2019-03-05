@@ -38,7 +38,7 @@ public:
      *  @param  connection
      *  @throws std::runtime_error
      */
-    Channel(Connection *connection);
+    explicit Channel(Connection *connection);
     
     /**
      *  Copy'ing of channel objects is not supported
@@ -50,7 +50,9 @@ public:
      *  But movement _is_ allowed
      *  @param  channel
      */
-    Channel(Channel &&channel) : _implementation(std::move(channel._implementation)) {}
+    Channel(Channel &&channel) noexcept
+        : _implementation(std::move(channel._implementation))
+    {}
 
     /**
      *  Destructor

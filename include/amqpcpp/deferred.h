@@ -196,7 +196,7 @@ public:
      *
      *  @param  failed  are we already failed?
      */
-    Deferred(bool failed = false) : _failed(failed) {}
+    explicit Deferred(bool failed = false) : _failed(failed) {}
 
 public:
     /**
@@ -217,7 +217,7 @@ public:
     /**
      *  Cast to a boolean
      */
-    operator bool () const
+    explicit operator bool () const
     {
         return !_failed;
     }

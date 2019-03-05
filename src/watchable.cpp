@@ -13,14 +13,12 @@ namespace AMQP {
 /**
  *  Destructor
  */
-Watchable::~Watchable()
-{
-    // loop through all monitors
-    for (auto iter = _monitors.begin(); iter != _monitors.end(); iter++)
-    {
-        // tell the monitor that it now is invalid
-        (*iter)->invalidate();
-    }
+Watchable::~Watchable() {
+	// loop through all monitors
+	for (auto iter = _monitors.begin(); iter != _monitors.end(); iter++) {
+		// tell the monitor that it now is invalid
+		(*iter)->invalidate();
+	}
 }
 
 /**

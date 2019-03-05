@@ -375,7 +375,7 @@ DeferredQueue &ChannelImpl::declareQueue(const std::string &name, int flags, con
 
 /**
  *  Bind a queue to an exchange
- *
+ *m
  *  @param  exchangeName    name of the exchange to bind to
  *  @param  queueName       name of the queue
  *  @param  routingkey      routingkey

@@ -86,20 +86,20 @@ public:
      *  Casting operators
      *  @return mixed
      */
-    virtual operator const std::string& () const;
-    virtual operator const char * () const { return nullptr; }
-    virtual operator uint8_t () const { return 0; }
-    virtual operator uint16_t () const { return 0; }
-    virtual operator uint32_t () const { return 0; }
-    virtual operator uint64_t () const { return 0; }
-    virtual operator int8_t () const { return 0; }
-    virtual operator int16_t () const { return 0; }
-    virtual operator int32_t () const { return 0; }
-    virtual operator int64_t () const { return 0; }
-    virtual operator float () const { return 0; }
-    virtual operator double () const { return 0; }
-    virtual operator const Array& () const;
-    virtual operator const Table& () const;
+    explicit virtual operator const std::string& () const;
+    explicit virtual operator const char * () const { return nullptr; }
+    explicit virtual operator uint8_t () const { return 0; }
+    explicit virtual operator uint16_t () const { return 0; }
+    explicit virtual operator uint32_t () const { return 0; }
+    explicit virtual operator uint64_t () const { return 0; }
+    explicit virtual operator int8_t () const { return 0; }
+    explicit virtual operator int16_t () const { return 0; }
+    explicit virtual operator int32_t () const { return 0; }
+    explicit virtual operator int64_t () const { return 0; }
+    explicit virtual operator float () const { return 0; }
+    explicit virtual operator double () const { return 0; }
+    explicit virtual operator const Array& () const;
+    explicit virtual operator const Table& () const;
 
     /**
      *  Check the field type

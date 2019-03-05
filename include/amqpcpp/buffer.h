@@ -34,7 +34,7 @@ public:
     /**
     *  Destructor
     */
-    virtual ~Buffer() {}
+    virtual ~Buffer() = default;
     
     /**
      *  Total size of the buffer

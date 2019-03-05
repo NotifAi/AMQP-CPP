@@ -56,7 +56,7 @@ public:
      *  Construct an AMQP object with default login data and default vhost
      *  @param  handler         Connection handler
      */
-    Connection(ConnectionHandler *handler) : _implementation(this, handler, Login(), "/") {}
+    explicit Connection(ConnectionHandler *handler) : _implementation(this, handler, Login(), "/") {}
 
     /**
      *  No copy'ing, we do not support having two identical connection objects
@@ -67,7 +67,7 @@ public:
     /**
      *  Destructor
      */
-    virtual ~Connection() {}
+    virtual ~Connection() = default;
 
     /**
      *  No assignments of other connections
