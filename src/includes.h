@@ -8,14 +8,14 @@
  */
 
 // c and c++ dependencies
-#include <stdlib.h>
-#include <string.h> // TODO cstring
-#include <stdint.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdint>
 #include <string>
 #include <memory>
 #include <limits>
 #include <ostream>
-#include <math.h>
+#include <cmath>
 #include <map>
 #include <algorithm>
 #include <unordered_map>

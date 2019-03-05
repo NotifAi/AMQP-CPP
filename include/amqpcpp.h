@@ -27,7 +27,7 @@
 
 // base C include files
 #include <stdint.h>
-#include <math.h>
+#include <cmath>
 
 // fix strcasecmp on non linux platforms
 #if (defined(_WIN16) || defined(_WIN32) || defined(_WIN64) || defined(__WINDOWS__)) && !defined(__CYGWIN__)
