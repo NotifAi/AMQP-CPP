@@ -36,9 +36,9 @@
 
 // C++17 has 'weak_from_this()' support.
 #if __cplusplus >= 201701L
-#define PTR_FROM_THIS(T) weak_from_this()
+#   define PTR_FROM_THIS(T) weak_from_this()
 #else
-#define PTR_FROM_THIS(T) std::weak_ptr<T>(shared_from_this())
+#   define PTR_FROM_THIS(T) std::weak_ptr<T>(shared_from_this())
 #endif
 
 /**
@@ -57,7 +57,7 @@ protected:
 	 */
 	class Watcher : public virtual std::enable_shared_from_this<Watcher> {
 	private:
-		using strand_weak_ptr = std::weak_ptr<boost::asio::io_service::strand>;
+		using strand_wp = std::weak_ptr<boost::asio::io_service::strand>;
 		using handler_cb = std::function<void(boost::system::error_code, std::size_t)>;
 
 	private:
@@ -65,13 +65,13 @@ protected:
 		 *  The boost asio io_service which is responsible for detecting events.
 		 *  @var class boost::asio::io_service&
 		 */
-		boost::asio::io_service &_ioservice;
+		boost::asio::io_service &_io;
 
 		/**
 		 *  The boost asio io_service::strand managed pointer.
 		 *  @var class std::shared_ptr<boost::asio::io_service>
 		 */
-		strand_weak_ptr _wpstrand;
+		strand_wp _wpstrand;
 
 		/**
 		 *  The boost tcp socket.
@@ -239,10 +239,10 @@ protected:
 		 *  @param  wpstrand        A weak pointer to a io_service::strand instance.
 		 *  @param  fd              The filedescriptor being watched
 		 */
-		Watcher(boost::asio::io_service &io_service, const std::weak_ptr<boost::asio::io_service::strand> strand, const int fd)
-			: _ioservice(io_service)
+		Watcher(boost::asio::io_service &io_service, const strand_wp strand, const int fd)
+			: _io(io_service)
 			, _wpstrand(strand)
-			, _socket(_ioservice)
+			, _socket(_io)
 		{
 			_socket.assign(fd);
 			_socket.non_blocking(true);
@@ -255,8 +255,7 @@ protected:
 		 */
 		Watcher(Watcher &&that) = delete;
 
-		Watcher(
-			const Watcher &that) = delete;
+		Watcher(const Watcher &that) = delete;
 
 		/**
 		 *  Destructor
@@ -447,13 +446,13 @@ protected:
 	 */
 	boost::asio::io_service &_ioservice;
 
-	using strand_shared_ptr = std::shared_ptr<boost::asio::io_service::strand>;
+	using strand_sp = std::shared_ptr<boost::asio::io_service::strand>;
 
 	/**
 	 *  The boost asio io_service::strand managed pointer.
 	 *  @var class std::shared_ptr<boost::asio::io_service>
 	 */
-	strand_shared_ptr _strand;
+	strand_sp _strand;
 
 	/**
 	 *  All I/O watchers that are active, indexed by their filedescriptor
@@ -508,7 +507,7 @@ protected:
 	 *  @param  interval        The suggested interval from the server
 	 *  @return uint16_t        The interval to use
 	 */
-	virtual uint16_t onNegotiate(TcpConnection *connection, uint16_t interval) override {
+	uint16_t onNegotiate(TcpConnection *connection, uint16_t interval) override {
 		// skip if no heartbeats are needed
 		if (interval == 0) {
 			return 0;
@@ -546,8 +545,7 @@ public:
 	 *
 	 *  @param  that    The object to not move or copy
 	 */
-	LibBoostAsioHandler(LibBoostAsioHandler
-	                    &&that) = delete;
+	LibBoostAsioHandler(LibBoostAsioHandler &&that) = delete;
 
 	LibBoostAsioHandler(const LibBoostAsioHandler &that) = delete;
 
