@@ -16,35 +16,35 @@ namespace AMQP {
 /**
  *  Class definition
  */
-class ReturnedMessage : public Message
-{
+class ReturnedMessage : public Message {
 private:
-    /**
-     *  The reply code
-     *  @var    int16_t
-     */
-    int16_t _replyCode;
+	/**
+	 *  The reply code
+	 *  @var    int16_t
+	 */
+	int16_t _replyCode;
 
-    /**
-     *  The reply message
-     *  @var    string
-     */
-    std::string _replyText;
-
+	/**
+	 *  The reply message
+	 *  @var    string
+	 */
+	std::string _replyText;
 
 public:
-    /**
-     *  Constructor
-     *  @param  frame
-     */
-    ReturnedMessage(const BasicReturnFrame &frame) :
-        Message(frame.exchange(), frame.routingKey()),
-        _replyCode(frame.replyCode()), _replyText(frame.replyText()) {}
+	/**
+	 *  Constructor
+	 *  @param  frame
+	 */
+	ReturnedMessage(const BasicReturnFrame &frame)
+		:
+		Message(frame.exchange(), frame.routingKey())
+		, _replyCode(frame.replyCode())
+		, _replyText(frame.replyText()) {}
 
-    /**
-     *  Destructor
-     */
-    virtual ~ReturnedMessage() = default;
+	/**
+	 *  Destructor
+	 */
+	virtual ~ReturnedMessage() = default;
 };
 
 /**

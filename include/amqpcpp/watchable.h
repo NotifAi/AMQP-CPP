@@ -59,6 +59,7 @@ private:
 		// make the vector smaller
 		_monitors.erase(iter, _monitors.end());
 	}
+
 private:
 	/**
 	 *  The monitors

@@ -29,102 +29,103 @@ namespace AMQP {
 /**
  *  Class definition
  */
-class Monitor
-{
+class Monitor {
 private:
-    /**
-     *  The object being watched
-     *  @var    Watchable
-     */
-    Watchable *_watchable;
+	/**
+	 *  The object being watched
+	 *  @var    Watchable
+	 */
+	Watchable *_watchable;
 
-    /**
-     *  Invalidate the object
-     */
-    void invalidate()
-    {
-        _watchable = nullptr;
-    }
+	/**
+	 *  Invalidate the object
+	 */
+	void invalidate() {
+		_watchable = nullptr;
+	}
 
 public:
-    /**
-     *  Constructor
-     *  @param  watchable
-     */
-    Monitor(Watchable *watchable) : _watchable(watchable)
-    {
-        // register with the watchable
-        _watchable->add(this);
-    }
+	/**
+	 *  Constructor
+	 *  @param  watchable
+	 */
+	Monitor(Watchable *watchable)
+		: _watchable(watchable) {
+		// register with the watchable
+		_watchable->add(this);
+	}
 
-    /**
-     *  Copy constructor
-     *  @param  monitor
-     */
-    Monitor(const Monitor &monitor) : _watchable(monitor._watchable)
-    {
-        // register with the watchable
-        if (_watchable) _watchable->add(this);
-    }
+	/**
+	 *  Copy constructor
+	 *  @param  monitor
+	 */
+	Monitor(const Monitor &monitor)
+		: _watchable(monitor._watchable) {
+		// register with the watchable
+		if (_watchable) {
+			_watchable->add(this);
+		}
+	}
 
-    /**
-     * Assignment operator
-     * @param  monitor
-     */
-    Monitor& operator= (const Monitor &monitor)
-    {
-        // remove from watchable
-        if (_watchable) _watchable->remove(this);
+	/**
+	 * Assignment operator
+	 * @param  monitor
+	 */
+	Monitor &operator=(const Monitor &monitor) {
+		// remove from watchable
+		if (_watchable) {
+			_watchable->remove(this);
+		}
 
-        // replace watchable
-        _watchable = monitor._watchable;
+		// replace watchable
+		_watchable = monitor._watchable;
 
-        // register with the watchable
-        if (_watchable) _watchable->add(this);
+		// register with the watchable
+		if (_watchable) {
+			_watchable->add(this);
+		}
 
-        return *this;
-    }
+		return *this;
+	}
 
-    /**
-     *  Destructor
-     */
-    virtual ~Monitor()
-    {
-        // remove from watchable
-        if (_watchable) _watchable->remove(this);
-    }
+	/**
+	 *  Destructor
+	 */
+	virtual ~Monitor() {
+		// remove from watchable
+		if (_watchable) {
+			_watchable->remove(this);
+		}
+	}
 
-    /**
-     *  Cast to boolean: is object in valid state?
-     *  @return bool
-     */
-    operator bool () const
-    {
-        return _watchable != nullptr;
-    }
-    
-    /**
-     *  Negate operator: is the object in an invalid state?
-     *  @return bool
-     */
-    bool operator! () const
-    {
-        return _watchable == nullptr;
-    }
+	/**
+	 *  Cast to boolean: is object in valid state?
+	 *  @return bool
+	 */
+	operator bool() const {
+		return _watchable != nullptr;
+	}
 
-    /**
-     *  Check if the object is valid
-     *  @return bool
-     */
-    bool valid() const
-    {
-        return _watchable != nullptr;
-    }
+	/**
+	 *  Negate operator: is the object in an invalid state?
+	 *  @return bool
+	 */
+	bool operator!() const {
+		return _watchable == nullptr;
+	}
 
-    /**
-     *  The watchable can access private data
-     */
-    friend class Watchable;
+	/**
+	 *  Check if the object is valid
+	 *  @return bool
+	 */
+	bool valid() const {
+		return _watchable != nullptr;
+	}
+
+	/**
+	 *  The watchable can access private data
+	 */
+	friend class Watchable;
 };
 
 

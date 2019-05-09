@@ -30,75 +30,73 @@ class ConnectionImpl;
 /**
  *  Class definition
  */
-class Frame
-{
+class Frame {
 protected:
-    /**
-     *  Protected constructor to ensure that no objects are created from
-     *  outside the library
-     */
-    Frame() {}
+	/**
+	 *  Protected constructor to ensure that no objects are created from
+	 *  outside the library
+	 */
+	Frame() {}
 
 public:
-    /**
-     *  Destructor
-     */
-    virtual ~Frame() {}
+	/**
+	 *  Destructor
+	 */
+	virtual ~Frame() {}
 
-    /**
-     *  return the total size of the frame
-     *  @return uint32_t
-     */
-    virtual uint32_t totalSize() const = 0;
+	/**
+	 *  return the total size of the frame
+	 *  @return uint32_t
+	 */
+	virtual uint32_t totalSize() const = 0;
 
-    /**
-     *  Fill an output buffer
-     *  @param  buffer
-     */
-    virtual void fill(OutBuffer &buffer) const = 0;
+	/**
+	 *  Fill an output buffer
+	 *  @param  buffer
+	 */
+	virtual void fill(OutBuffer &buffer) const = 0;
 
-    /**
-     *  Is this a frame that is part of the connection setup?
-     *  @return bool
-     */
-    virtual bool partOfHandshake() const { return false; }
+	/**
+	 *  Is this a frame that is part of the connection setup?
+	 *  @return bool
+	 */
+	virtual bool partOfHandshake() const { return false; }
 
-    /**
-     *  Is this a frame that is part of the connection close operation?
-     *  @return bool
-     */
-    virtual bool partOfShutdown() const { return false; }
+	/**
+	 *  Is this a frame that is part of the connection close operation?
+	 *  @return bool
+	 */
+	virtual bool partOfShutdown() const { return false; }
 
-    /**
-     *  Does this frame need an end-of-frame seperator?
-     *  @return bool
-     */
-    virtual bool needsSeparator() const { return true; }
+	/**
+	 *  Does this frame need an end-of-frame seperator?
+	 *  @return bool
+	 */
+	virtual bool needsSeparator() const { return true; }
 
-    /**
-     *  Is this a synchronous frame?
-     *
-     *  After a synchronous frame no more frames may be
-     *  sent until the accompanying -ok frame arrives
-     */
-    virtual bool synchronous() const { return false; }
+	/**
+	 *  Is this a synchronous frame?
+	 *
+	 *  After a synchronous frame no more frames may be
+	 *  sent until the accompanying -ok frame arrives
+	 */
+	virtual bool synchronous() const { return false; }
 
-    /**
-     *  Process the frame
-     *  @param  connection      The connection over which it was received
-     *  @return bool            Was it succesfully processed?
-     */
-    virtual bool process(ConnectionImpl *connection)
-    {
-        // make sure compilers dont complain about unused parameters
-        (void) connection;
+	/**
+	 *  Process the frame
+	 *  @param  connection      The connection over which it was received
+	 *  @return bool            Was it succesfully processed?
+	 */
+	virtual bool process(ConnectionImpl *connection) {
+		// make sure compilers dont complain about unused parameters
+		(void)connection;
 
-        // this is an exception
-        throw ProtocolException("unimplemented frame");
+		// this is an exception
+		throw ProtocolException("unimplemented frame");
 
-        // unreachable
-        return false;
-    }
+		// unreachable
+		return false;
+	}
 };
 
 /**

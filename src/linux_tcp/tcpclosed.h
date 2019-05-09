@@ -16,39 +16,40 @@
  *  Set up namespace
  */
 namespace AMQP {
-    
+
 /**
  *  Class definition
  */
-class TcpClosed : public TcpState
-{
+class TcpClosed : public TcpState {
 public:
-    /**
-     *  Constructor
-     *  @param  parent      The parent object
-     */
-    TcpClosed(TcpParent *parent) : 
-        TcpState(parent) {}
+	/**
+	 *  Constructor
+	 *  @param  parent      The parent object
+	 */
+	TcpClosed(TcpParent *parent)
+		:
+		TcpState(parent) {}
 
-    /**
-     *  Constructor
-     *  @param  state       The to-be-copied state
-     */
-    TcpClosed(const TcpState *state) : 
-        TcpState(state) {}
-    
-    /**
-     *  Destructor
-     */
-    virtual ~TcpClosed() noexcept = default;
+	/**
+	 *  Constructor
+	 *  @param  state       The to-be-copied state
+	 */
+	TcpClosed(const TcpState *state)
+		:
+		TcpState(state) {}
 
-    /**
-     *  Is this a closed / dead state?
-     *  @return bool
-     */
-    virtual bool closed() const override { return true; }
+	/**
+	 *  Destructor
+	 */
+	virtual ~TcpClosed() noexcept = default;
+
+	/**
+	 *  Is this a closed / dead state?
+	 *  @return bool
+	 */
+	virtual bool closed() const override { return true; }
 };
-    
+
 /**
  *  End of namespace
  */

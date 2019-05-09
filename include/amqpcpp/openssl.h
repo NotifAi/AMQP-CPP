@@ -29,7 +29,7 @@ namespace AMQP {
  *  @param  handle          Handle returned by dlopen() that has access to openssl
  */
 void openssl(void *handle);
-    
+
 /**
  *  End of namespace
  */

@@ -22,122 +22,119 @@ namespace AMQP {
  *  Stack-based smart pointer
  */
 template <typename T>
-class stack_ptr
-{
+class stack_ptr {
 private:
-    /**
-     *  Storage for the object
-     *  @var    typename std::aligned_storage<sizeof(T), alignof(T)>::type
-     */
-    typename std::aligned_storage<sizeof(T), alignof(T)>::type _data;
+	/**
+	 *  Storage for the object
+	 *  @var    typename std::aligned_storage<sizeof(T), alignof(T)>::type
+	 */
+	typename std::aligned_storage<sizeof(T), alignof(T)>::type _data;
 
-    /**
-     *  Is the pointer initialized?
-     *  @var    boolean
-     */
-    bool _initialized = false;
+	/**
+	 *  Is the pointer initialized?
+	 *  @var    boolean
+	 */
+	bool _initialized = false;
 public:
-    /**
-     *  Constructor
-     */
-    stack_ptr() = default;
+	/**
+	 *  Constructor
+	 */
+	stack_ptr() = default;
 
-    /**
-     *  Copy and moving is disabled
-     *
-     *  @param  that    The stack_ptr we refuse to copy/move
-     */
-    stack_ptr(const stack_ptr &that) = delete;
-    stack_ptr(stack_ptr &&that) = delete;
+	/**
+	 *  Copy and moving is disabled
+	 *
+	 *  @param  that    The stack_ptr we refuse to copy/move
+	 */
+	stack_ptr(const stack_ptr &that) = delete;
 
-    /**
-     *  Destructor
-     */
-    ~stack_ptr()
-    {
-        // reset the pointer
-        reset();
-    }
+	stack_ptr(stack_ptr &&that) = delete;
 
-    /**
-     *  Reset the pointer
-     */
-    void reset()
-    {
-        // are we initialized?
-        if (!_initialized) return;
+	/**
+	 *  Destructor
+	 */
+	~stack_ptr() {
+		// reset the pointer
+		reset();
+	}
 
-        // destroy the object
-        reinterpret_cast<T*>(&_data)->~T();
+	/**
+	 *  Reset the pointer
+	 */
+	void reset() {
+		// are we initialized?
+		if (!_initialized) {
+			return;
+		}
 
-        // the object is not currently initialized
-        _initialized = false;
-    }
+		// destroy the object
+		reinterpret_cast<T *>(&_data)->~T();
 
-    /**
-     *  Construct the object
-     *
-     *  @param  ...     Zero or more constructor arguments for T
-     */
-    template <typename... Arguments>
-    void construct(Arguments&&... parameters)
-    {
-        // first reset the current object
-        reset();
+		// the object is not currently initialized
+		_initialized = false;
+	}
 
-        // initialize new object
-        new (&_data) T(std::forward<Arguments>(parameters)...);
+	/**
+	 *  Construct the object
+	 *
+	 *  @param  ...     Zero or more constructor arguments for T
+	 */
+	template <typename... Arguments>
+	void construct(Arguments &&... parameters) {
+		// first reset the current object
+		reset();
 
-        // we are now initialized
-        _initialized = true;
-    }
+		// initialize new object
+		new(&_data) T(std::forward<Arguments>(parameters)...);
 
-    /**
-     *  Is the object initialized?
-     *
-     *  @return Are we currently managing an object?
-     */
-    operator bool() const
-    {
-        // are we initialized with an object?
-        return _initialized;
-    }
+		// we are now initialized
+		_initialized = true;
+	}
 
-    /**
-     *  Retrieve a pointer to the object
-     *
-     *  @return Pointer to the object or nullptr if no object is managed
-     */
-    T *get() const
-    {
-        // do we have a managed object
-        if (!_initialized) return nullptr;
+	/**
+	 *  Is the object initialized?
+	 *
+	 *  @return Are we currently managing an object?
+	 */
+	operator bool() const {
+		// are we initialized with an object?
+		return _initialized;
+	}
 
-        // return pointer to the managed object
-        return const_cast<T*>(reinterpret_cast<const T*>(&_data));
-    }
+	/**
+	 *  Retrieve a pointer to the object
+	 *
+	 *  @return Pointer to the object or nullptr if no object is managed
+	 */
+	T *get() const {
+		// do we have a managed object
+		if (!_initialized) {
+			return nullptr;
+		}
 
-    /**
-     *  Retrieve a reference to the object
-     *
-     *  @return Reference to the object, undefined if no object is managed
-     */
-    T &operator*() const
-    {
-        // dereference the pointer
-        return *operator->();
-    }
+		// return pointer to the managed object
+		return const_cast<T *>(reinterpret_cast<const T *>(&_data));
+	}
 
-    /**
-     *  Retrieve a pointer to the object
-     *
-     *  @return Pointer to the object, undefined if no object is managed
-     */
-    T *operator->() const
-    {
-        // return pointer to the managed object
-        return const_cast<T*>(reinterpret_cast<const T*>(&_data));
-    }
+	/**
+	 *  Retrieve a reference to the object
+	 *
+	 *  @return Reference to the object, undefined if no object is managed
+	 */
+	T &operator*() const {
+		// dereference the pointer
+		return *operator->();
+	}
+
+	/**
+	 *  Retrieve a pointer to the object
+	 *
+	 *  @return Pointer to the object, undefined if no object is managed
+	 */
+	T *operator->() const {
+		// return pointer to the managed object
+		return const_cast<T *>(reinterpret_cast<const T *>(&_data));
+	}
 };
 
 /**

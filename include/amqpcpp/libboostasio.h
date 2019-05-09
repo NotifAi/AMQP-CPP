@@ -24,13 +24,16 @@
  *  Dependencies
  */
 #include <memory>
+#include <mutex>
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
+#include <boost/noncopyable.hpp>
 
 #include "amqpcpp/linux_tcp.h"
 
@@ -50,186 +53,17 @@ namespace AMQP {
  *  Class definition
  *  @note Because of a limitation on Windows, this will only work on POSIX based systems - see https://github.com/chriskohlhoff/asio/issues/70
  */
-class LibBoostAsioHandler : public virtual TcpHandler {
+class LibBoostAsioHandler : public virtual TcpHandler, private boost::noncopyable {
 protected:
+	using strand_sp = std::shared_ptr<boost::asio::io_service::strand>;
+
 	/**
 	 *  Helper class that wraps a boost io_service socket monitor.
 	 */
-	class Watcher : public virtual std::enable_shared_from_this<Watcher> {
+	class Watcher : public virtual std::enable_shared_from_this<Watcher>, private boost::noncopyable {
 	private:
 		using strand_wp = std::weak_ptr<boost::asio::io_service::strand>;
 		using handler_cb = std::function<void(boost::system::error_code, std::size_t)>;
-
-	private:
-		/**
-		 *  The boost asio io_service which is responsible for detecting events.
-		 *  @var class boost::asio::io_service&
-		 */
-		boost::asio::io_service &_io;
-
-		/**
-		 *  The boost asio io_service::strand managed pointer.
-		 *  @var class std::shared_ptr<boost::asio::io_service>
-		 */
-		strand_wp _wpstrand;
-
-		/**
-		 *  The boost tcp socket.
-		 *  @var class boost::asio::ip::tcp::socket
-		 *  @note https://stackoverflow.com/questions/38906711/destroying-boost-asio-socket-without-closing-native-handler
-		 */
-		boost::asio::posix::stream_descriptor _socket;
-
-		/**
-		 *  A boolean that indicates if the watcher is monitoring for read events.
-		 *  @var _read True if reads are being monitored else false.
-		 */
-		bool _read {false};
-
-		/**
-		 *  A boolean that indicates if the watcher has a pending read event.
-		 *  @var _read True if read is pending else false.
-		 */
-		std::atomic<bool> _read_pending {false};
-
-		/**
-		 *  A boolean that indicates if the watcher is monitoring for write events.
-		 *  @var _read True if writes are being monitored else false.
-		 */
-		bool _write {false};
-
-		/**
-		 *  A boolean that indicates if the watcher has a pending write event.
-		 *  @var _read True if read is pending else false.
-		 */
-		std::atomic<bool> _write_pending {false};
-
-		/**
-		 * Binds and returns a read handler for the io operation.
-		 * @param  connection   The connection being watched.
-		 * @param  fd           The file descriptor being watched.
-		 * @return handler callback
-		 */
-		handler_cb get_read_handler(TcpConnection *const connection, const int fd) {
-			const std::weak_ptr<Watcher> awpWatcher = PTR_FROM_THIS(Watcher);
-
-			return [connection, fd, awpWatcher](const boost::system::error_code &ec, const std::size_t bytes_transferred) {
-				const std::shared_ptr<Watcher> aWatcher = awpWatcher.lock();
-				if (!aWatcher) {
-					return;
-				}
-
-				const std::shared_ptr<boost::asio::io_service::strand> strand = aWatcher->_wpstrand.lock();
-				if (!strand) {
-					aWatcher->read_handler(
-						boost::asio::error::make_error_code(boost::asio::error::operation_aborted), std::size_t {0}
-						, awpWatcher, connection, fd
-					);
-					return;
-				}
-
-				strand->dispatch([&ec, bytes_transferred, awpWatcher, connection, fd]() {
-					const std::shared_ptr<Watcher> awtch = awpWatcher.lock();
-					if (awtch) {
-						awtch->read_handler(ec, bytes_transferred, awpWatcher, connection, fd);
-					}
-				});
-			};
-		}
-
-		/**
-		 * Binds and returns a read handler for the io operation.
-		 * @param  connection   The connection being watched.
-		 * @param  fd           The file descripter being watched.
-		 * @return handler callback
-		 */
-		handler_cb get_write_handler(TcpConnection *const connection, const int fd) {
-			const std::weak_ptr<Watcher> awpWatcher = PTR_FROM_THIS(Watcher);
-
-			return [connection, fd, awpWatcher](const boost::system::error_code &ec, const std::size_t bytes_transferred) {
-					const std::shared_ptr<Watcher> aWatcher = awpWatcher.lock();
-					if (!aWatcher) {
-						return;
-					}
-
-					const std::shared_ptr<boost::asio::io_service::strand> strand = aWatcher->_wpstrand.lock();
-					if (!strand) {
-						aWatcher->write_handler(boost::asio::error::operation_aborted, std::size_t {0}
-							, awpWatcher, connection, fd
-						);
-						return;
-					}
-
-					strand->dispatch([&ec, bytes_transferred, awpWatcher, connection, fd]() {
-						const std::shared_ptr<Watcher> awtch = awpWatcher.lock();
-						if (awtch) {
-							awtch->write_handler(ec, bytes_transferred, awpWatcher, connection, fd);
-						}
-					});
-				};
-		}
-
-		/**
-		 *  Handler method that is called by boost's io_service when the socket pumps a read event.
-		 *  @param  ec          The status of the callback.
-		 *  @param  bytes_transferred The number of bytes transferred.
-		 *  @param  awpWatcher  A weak pointer to this object.
-		 *  @param  connection  The connection being watched.
-		 *  @param  fd          The file descriptor being watched.
-		 *  @note   The handler will get called if a read is cancelled.
-		 */
-		void read_handler(const boost::system::error_code &ec, const std::size_t bytes_transferred
-		                  , const std::weak_ptr<Watcher> awpWatcher, TcpConnection *const connection
-		                  , const int fd) {
-			// Resolve any potential problems with dangling pointers
-			// (remember we are using async).
-			const std::shared_ptr<Watcher> apWatcher = awpWatcher.lock();
-			if (!apWatcher) {
-				return;
-			}
-
-			_read_pending = false;
-
-			if ((!ec || ec == boost::asio::error::would_block) && _read) {
-				connection->process(fd, AMQP::readable);
-
-				bool expected = false;
-				if (_read_pending.compare_exchange_strong(expected, true)) {
-					_socket.async_read_some(boost::asio::null_buffers(), get_read_handler(connection, fd));
-				}
-			}
-		}
-
-		/**
-		 *  Handler method that is called by boost's io_service when the socket pumps a write event.
-		 *  @param  ec          The status of the callback.
-		 *  @param  bytes_transferred The number of bytes transferred.
-		 *  @param  awpWatcher  A weak pointer to this object.
-		 *  @param  connection  The connection being watched.
-		 *  @param  fd          The file descriptor being watched.
-		 *  @note   The handler will get called if a write is cancelled.
-		 */
-		void write_handler(const boost::system::error_code ec, const std::size_t bytes_transferred
-		                   , const std::weak_ptr<Watcher> awpWatcher, TcpConnection *const connection
-		                   , const int fd) {
-			// Resolve any potential problems with dangling pointers
-			// (remember we are using async).
-			const std::shared_ptr<Watcher> apWatcher = awpWatcher.lock();
-			if (!apWatcher) {
-				return;
-			}
-
-			_write_pending = false;
-
-			if ((!ec || ec == boost::asio::error::would_block) && _write) {
-				connection->process(fd, AMQP::writable);
-
-				bool expected = false;
-				if (_write_pending.compare_exchange_strong(expected, true)) {
-					_socket.async_write_some(boost::asio::null_buffers(), get_write_handler(connection, fd));
-				}
-			}
-		}
 
 	public:
 		/**
@@ -239,23 +73,7 @@ protected:
 		 *  @param  wpstrand        A weak pointer to a io_service::strand instance.
 		 *  @param  fd              The filedescriptor being watched
 		 */
-		Watcher(boost::asio::io_service &io_service, const strand_wp strand, const int fd)
-			: _io(io_service)
-			, _wpstrand(strand)
-			, _socket(_io)
-		{
-			_socket.assign(fd);
-			_socket.non_blocking(true);
-		}
-
-		/**
-		 *  Watchers cannot be copied or moved
-		 *
-		 *  @param  that    The object to not move or copy
-		 */
-		Watcher(Watcher &&that) = delete;
-
-		Watcher(const Watcher &that) = delete;
+		Watcher(boost::asio::io_service &io_service, strand_wp strand, int fd);
 
 		/**
 		 *  Destructor
@@ -266,133 +84,78 @@ protected:
 			_socket.release();
 		}
 
+	public:
 		/**
 		 *  Change the events for which the filedescriptor is monitored
 		 *  @param  events
 		 */
-		void events(TcpConnection *connection, int fd, int events) {
-			// 1. Handle reads?
-			_read = ((events & AMQP::readable) != 0);
+		void events(TcpConnection *connection, int fd, int events);
 
-			// Read requested but no read pending?
-			if (_read) {
-				bool expected = false;
-				if (_read_pending.compare_exchange_strong(expected, true)) {
-					_socket.async_read_some(boost::asio::null_buffers(), get_read_handler(connection, fd));
-				}
-			}
+	private:
+		/**
+		 * Binds and returns a read handler for the io operation.
+		 * @param  connection   The connection being watched.
+		 * @param  fd           The file descriptor being watched.
+		 * @return handler callback
+		 */
+		handler_cb get_read_handler(TcpConnection *const connection, const int fd);
 
-			// 2. Handle writes?
-			_write = ((events & AMQP::writable) != 0);
+		/**
+		 * Binds and returns a read handler for the io operation.
+		 * @param  connection   The connection being watched.
+		 * @param  fd           The file descripter being watched.
+		 * @return handler callback
+		 */
+		handler_cb get_write_handler(TcpConnection *const connection, const int fd);
 
-			// Write requested but no write pending?
-			if (_write) {
-				bool expected = false;
-				if (_write_pending.compare_exchange_strong(expected, true)) {
-					_socket.async_write_some(
-						boost::asio::null_buffers(), get_write_handler(connection, fd));
-				}
-			}
-		}
+		/**
+		 *  Handler method that is called by boost's io_service when the socket pumps a read event.
+		 *  @param  ec          The status of the callback.
+		 *  @param  bytes_transferred The number of bytes transferred.
+		 *  @param  awpWatcher  A weak pointer to this object.
+		 *  @param  connection  The connection being watched.
+		 *  @param  fd          The file descriptor being watched.
+		 *  @note   The handler will get called if a read is cancelled.
+		 */
+		void read_handler(const boost::system::error_code &ec, std::size_t bytes_transferred
+		                  , std::weak_ptr<Watcher> awpWatcher, TcpConnection *const connection
+		                  , int fd);
+
+		/**
+		 *  Handler method that is called by boost's io_service when the socket pumps a write event.
+		 *  @param  ec          The status of the callback.
+		 *  @param  bytes_transferred The number of bytes transferred.
+		 *  @param  awpWatcher  A weak pointer to this object.
+		 *  @param  connection  The connection being watched.
+		 *  @param  fd          The file descriptor being watched.
+		 *  @note   The handler will get called if a write is cancelled.
+		 */
+		void write_handler(const boost::system::error_code &ec, std::size_t bytes_transferred
+		                   , std::weak_ptr<Watcher> awpWatcher, TcpConnection *const connection
+		                   , int fd);
+
+	private:
+		boost::asio::io_service &_io;
+		strand_wp _wpstrand;
+		/**
+		 *  The boost tcp socket.
+		 *  @var class boost::asio::ip::tcp::socket
+		 *  @note https://stackoverflow.com/questions/38906711/destroying-boost-asio-socket-without-closing-native-handler
+		 */
+		boost::asio::posix::stream_descriptor _socket;
+		bool _read;
+		std::atomic<bool> _read_pending;
+		bool _write;
+		std::atomic<bool> _write_pending;
 	};
 
 	/**
 	 *  Timer class to periodically fire a heartbeat
 	 */
-	class Timer : public std::enable_shared_from_this<Timer> {
+	class Timer : public std::enable_shared_from_this<Timer>, private boost::noncopyable {
 	private:
-		/**
-		 *  The boost asio io_service which is responsible for detecting events.
-		 *  @var class boost::asio::io_service&
-		 */
-		boost::asio::io_service &_ioservice;
-
-		using strand_weak_ptr = std::weak_ptr<boost::asio::io_service::strand>;
-
-		/**
-		 *  The boost asio io_service::strand managed pointer.
-		 *  @var class std::shared_ptr<boost::asio::io_service>
-		 */
-		strand_weak_ptr _wpstrand;
-
-		/**
-		 *  The boost asynchronous deadline timer.
-		 *  @var class boost::asio::deadline_timer
-		 */
-		boost::asio::steady_timer _timer;
-
 		using handler_fn = std::function<void(const boost::system::error_code &)>;
-
-		/**
-		 * Binds and returns a lamba function handler for the io operation.
-		 * @param  connection   The connection being watched.
-		 * @param  timeout      The file descripter being watched.
-		 * @return handler callback
-		 */
-		handler_fn get_handler(TcpConnection *const connection, const uint16_t timeout) {
-			const std::weak_ptr<Timer> awpTimer = PTR_FROM_THIS(Timer);
-
-			return [connection, timeout, awpTimer](const boost::system::error_code &ec) {
-				const std::shared_ptr<Timer> aTimer = awpTimer.lock();
-				if (!aTimer) {
-					return;
-				}
-
-				const std::shared_ptr<boost::asio::io_service::strand> strand = aTimer->_wpstrand.lock();
-				if (!strand) {
-					aTimer->timeout(
-						boost::asio::error::make_error_code(boost::asio::error::operation_aborted), awpTimer
-						, connection, timeout
-					);
-					return;
-				}
-				strand->dispatch([&ec, awpTimer, connection, timeout]() {
-					const std::shared_ptr<Timer> atimer = awpTimer.lock();
-					if (atimer) {
-						atimer->timeout(ec, awpTimer, connection, timeout);
-					}
-				});
-			};
-		}
-
-		/**
-		 *  Callback method that is called by libev when the timer expires
-		 *  @param  ec          error code returned from loop
-		 *  @param  loop        The loop in which the event was triggered
-		 *  @param  connection
-		 *  @param  timeout
-		 */
-		void
-		timeout(const boost::system::error_code &ec, std::weak_ptr<Timer> awpThis, TcpConnection *const connection
-		        , const uint16_t timeout) {
-			// Resolve any potential problems with dangling pointers
-			// (remember we are using async).
-			const std::shared_ptr<Timer> apTimer = awpThis.lock();
-			if (!apTimer) {
-				return;
-			}
-
-			if (!ec) {
-				if (connection) {
-					// send the heartbeat
-					connection->heartbeat();
-				}
-
-				// Reschedule the timer for the future:
-				_timer.expires_at(_timer.expires_at() + std::chrono::seconds(timeout));
-
-				// Posts the timer event
-				_timer.async_wait(get_handler(connection, timeout));
-			}
-		}
-
-		/**
-		 *  Stop the timer
-		 */
-		void stop() {
-			// do nothing if it was never set
-			_timer.cancel();
-		}
+		using strand_weak_ptr = std::weak_ptr<boost::asio::io_service::strand>;
 
 	public:
 		/**
@@ -400,20 +163,7 @@ protected:
 		 *  @param  io_service The boost asio io_service.
 		 *  @param  wpstrand   A weak pointer to a io_service::strand instance.
 		 */
-		Timer(boost::asio::io_service &io_service, const strand_weak_ptr wpstrand)
-			: _ioservice(io_service)
-			, _wpstrand(wpstrand)
-			, _timer(_ioservice)
-		{}
-
-		/**
-		 *  Timers cannot be copied or moved
-		 *
-		 *  @param  that    The object to not move or copy
-		 */
-		Timer(Timer &&that) = delete;
-
-		Timer(const Timer &that) = delete;
+		Timer(boost::asio::io_service &io_service, strand_weak_ptr wpstrand);
 
 		/**
 		 *  Destructor
@@ -423,82 +173,68 @@ protected:
 			stop();
 		}
 
+	public:
 		/**
 		 *  Change the expire time
 		 *  @param  connection
 		 *  @param  timeout
 		 */
-		void set(TcpConnection *connection, uint16_t timeout) {
-			// stop timer in case it was already set
-			stop();
+		void set(TcpConnection *connection, uint16_t timeout);
 
-			// Reschedule the timer for the future:
-			_timer.expires_from_now(std::chrono::seconds(timeout));
+	private:
+		/**
+		 * Binds and returns a lambda function handler for the io operation.
+		 * @param  connection   The connection being watched.
+		 * @param  timeout      The file descriptor being watched.
+		 * @return handler callback
+		 */
+		handler_fn get_handler(TcpConnection *connection, uint16_t timeout);
 
-			// Posts the timer event
-			_timer.async_wait(get_handler(connection, timeout));
-		}
+		/**
+		 *  Callback method that is called by libev when the timer expires
+		 *  @param  ec          error code returned from loop
+		 *  @param  loop        The loop in which the event was triggered
+		 *  @param  connection
+		 *  @param  timeout
+		 */
+		void timeout(const boost::system::error_code &ec, std::weak_ptr<Timer> awpThis, TcpConnection *connection
+		             , uint16_t timeout);
+
+		/**
+		 *  Stop the timer
+		 */
+		void stop();
+
+	private:
+		boost::asio::io_service &_ioservice;
+		strand_weak_ptr _wpstrand;
+		boost::asio::steady_timer _timer;
 	};
 
+public:
 	/**
-	 *  The boost asio io_service.
-	 *  @var class boost::asio::io_service&
+	 *  Constructor
+	 *  @param  io_service    The boost io_service to wrap
 	 */
-	boost::asio::io_service &_ioservice;
-
-	using strand_sp = std::shared_ptr<boost::asio::io_service::strand>;
-
-	/**
-	 *  The boost asio io_service::strand managed pointer.
-	 *  @var class std::shared_ptr<boost::asio::io_service>
-	 */
-	strand_sp _strand;
+	explicit LibBoostAsioHandler(boost::asio::io_service &io);
 
 	/**
-	 *  All I/O watchers that are active, indexed by their filedescriptor
-	 *  @var std::map<int,Watcher>
+	 *  Destructor
 	 */
-	std::map<int, std::shared_ptr<Watcher> > _watchers;
+	~LibBoostAsioHandler() override = default;
+
+public:
+	/**
+	 *  Returns a reference to the boost io_service object that is being used.
+	 *  @return The boost io_service object.
+	 */
+	boost::asio::io_service &service();
 
 	/**
-	 * The boost asio io_service::deadline_timer managed pointer.
-	 * @var class std::shared_ptr<Timer>
+	 * Make sure to stop the heartbeat timer after the connection is closed.
+	 * Otherwise it will keep the service running forever.
 	 */
-	std::shared_ptr<Timer> _timer;
-
-	/**
-	 *  Method that is called by AMQP-CPP to register a filedescriptor for readability or writability
-	 *  @param  connection  The TCP connection object that is reporting
-	 *  @param  fd          The filedescriptor to be monitored
-	 *  @param  flags       Should the object be monitored for readability or writability?
-	 */
-	void monitor(TcpConnection *const connection, const int fd, const int flags) override {
-		// do we already have this filedescriptor
-		auto iter = _watchers.find(fd);
-
-		// was it found?
-		if (iter == _watchers.end()) {
-			// we did not yet have this watcher - but that is ok if no filedescriptor was registered
-			if (flags == 0) {
-				return;
-			}
-
-			// construct a new pair (watcher/timer), and put it in the map
-			const std::shared_ptr<Watcher> apWatcher =
-				std::make_shared<Watcher>(_ioservice, _strand, fd);
-
-			_watchers[fd] = apWatcher;
-
-			// explicitly set the events to monitor
-			apWatcher->events(connection, fd, flags);
-		} else if (flags == 0) {
-			// the watcher does already exist, but we no longer have to watch this watcher
-			_watchers.erase(iter);
-		} else {
-			// Change the events on which to act.
-			iter->second->events(connection, fd, flags);
-		}
-	}
+	void onClosed(TcpConnection *connection) override;
 
 protected:
 	/**
@@ -507,69 +243,27 @@ protected:
 	 *  @param  interval        The suggested interval from the server
 	 *  @return uint16_t        The interval to use
 	 */
-	uint16_t onNegotiate(TcpConnection *connection, uint16_t interval) override {
-		// skip if no heartbeats are needed
-		if (interval == 0) {
-			return 0;
-		}
+	uint16_t onNegotiate(TcpConnection *connection, uint16_t interval) override;
 
-		// set the timer
-		_timer->set(connection, interval);
-
-		// we agree with the interval
-		return interval;
-	}
-
-public:
-
+private:
 	/**
-	 *  Handler cannot be default constructed.
-	 *
-	 *  @param  that    The object to not move or copy
+	 *  Method that is called by AMQP-CPP to register a filedescriptor for readability or writability
+	 *  @param  connection  The TCP connection object that is reporting
+	 *  @param  fd          The filedescriptor to be monitored
+	 *  @param  flags       Should the object be monitored for readability or writability?
 	 */
-	LibBoostAsioHandler() = delete;
+	void monitor(TcpConnection *connection, int fd, int flags) override;
 
+private:
 	/**
-	 *  Constructor
-	 *  @param  io_service    The boost io_service to wrap
+	 *  The boost asio io_service.
+	 *  @var class boost::asio::io_service&
 	 */
-	explicit LibBoostAsioHandler(boost::asio::io_service &io)
-		: _ioservice(io)
-		, _strand(std::make_shared<boost::asio::io_service::strand>(io))
-		, _timer(std::make_shared<Timer>(_ioservice, _strand)) {
-
-	}
-
-	/**
-	 *  Handler cannot be copied or moved
-	 *
-	 *  @param  that    The object to not move or copy
-	 */
-	LibBoostAsioHandler(LibBoostAsioHandler &&that) = delete;
-
-	LibBoostAsioHandler(const LibBoostAsioHandler &that) = delete;
-
-	/**
-	 *  Returns a reference to the boost io_service object that is being used.
-	 *  @return The boost io_service object.
-	 */
-	boost::asio::io_service &service() {
-		return _ioservice;
-	}
-
-	/**
-	 *  Destructor
-	 */
-	~LibBoostAsioHandler() override = default;
-
-	/**
-	 * Make sure to stop the heartbeat timer after the connection is closed.
-	 * Otherwise it will keep the service running forever.
-	 */
-	void onClosed(TcpConnection *connection) override {
-		(void)connection;
-		_timer.reset();
-	}
+	boost::asio::io_service &_ioservice;
+	strand_sp _strand;
+	std::mutex _lock;
+	std::map<int, std::shared_ptr<Watcher>> _watchers;
+	std::shared_ptr<Timer> _timer;
 };
 
 

@@ -28,108 +28,104 @@ namespace AMQP {
 /**
  *  Class definition
  */
-class CopiedBuffer : public OutBuffer
-{
+class CopiedBuffer : public OutBuffer {
 private:
-    /**
-     *  The total capacity of the out buffer
-     *  @var size_t
-     */
-    size_t _capacity;
+	/**
+	 *  The total capacity of the out buffer
+	 *  @var size_t
+	 */
+	size_t _capacity;
 
-    /**
-     *  Pointer to the beginning of the buffer
-     *  @var const char *
-     */
-    char *_buffer;
+	/**
+	 *  Pointer to the beginning of the buffer
+	 *  @var const char *
+	 */
+	char *_buffer;
 
-    /**
-     *  Current size of the buffer
-     *  @var size_t
-     */
-    size_t _size = 0;
-
+	/**
+	 *  Current size of the buffer
+	 *  @var size_t
+	 */
+	size_t _size = 0;
 
 protected:
-    /**
-     *  The method that adds the actual data
-     *  @param  data
-     *  @param  size
-     */
-    void append(const void *data, size_t size) override
-    {
-        // copy into the buffer
-        memcpy(_buffer + _size, data, size);
-        
-        // update the size
-        _size += size;
-    }
+	/**
+	 *  The method that adds the actual data
+	 *  @param  data
+	 *  @param  size
+	 */
+	void append(const void *data, size_t size) override {
+		// copy into the buffer
+		memcpy(_buffer + _size, data, size);
+
+		// update the size
+		_size += size;
+	}
 
 public:
-    /**
-     *  Constructor
-     *  @param  frame
-     */
-    explicit CopiedBuffer(const Frame &frame) :
-        _capacity(frame.totalSize()),
-        _buffer((char *)malloc(_capacity)) 
-    {
-        // tell the frame to fill this buffer
-        frame.fill(*this);
-        
-        // append an end of frame byte (but not when still negotiating the protocol)
-        if (frame.needsSeparator()) add((uint8_t)206);
-    }
+	/**
+	 *  Constructor
+	 *  @param  frame
+	 */
+	explicit CopiedBuffer(const Frame &frame)
+		:
+		_capacity(frame.totalSize())
+		, _buffer((char *)malloc(_capacity)) {
+		// tell the frame to fill this buffer
+		frame.fill(*this);
 
-    /**
-     *  Disabled copy constructor to prevent expensive copy operations
-     *  @param  that
-     */
-    CopiedBuffer(const CopiedBuffer &that) = delete;
+		// append an end of frame byte (but not when still negotiating the protocol)
+		if (frame.needsSeparator()) {
+			add((uint8_t)206);
+		}
+	}
 
-    /**
-     *  Move constructor
-     *  @param  that
-     */
-    CopiedBuffer(CopiedBuffer &&that) noexcept :
-        _capacity(that._capacity),
-        _buffer(that._buffer),
-        _size(that._size)
-    {
-        // reset the other object
-        that._buffer = nullptr;
-        that._size = 0;
-        that._capacity = 0;
-    }
+	/**
+	 *  Disabled copy constructor to prevent expensive copy operations
+	 *  @param  that
+	 */
+	CopiedBuffer(const CopiedBuffer &that) = delete;
 
-    /**
-     *  Destructor
-     */
-    virtual ~CopiedBuffer()
-    {
-        // deallocate the buffer
-        free(_buffer);
-    }
+	/**
+	 *  Move constructor
+	 *  @param  that
+	 */
+	CopiedBuffer(CopiedBuffer &&that) noexcept
+		:
+		_capacity(that._capacity)
+		, _buffer(that._buffer)
+		, _size(that._size) {
+		// reset the other object
+		that._buffer = nullptr;
+		that._size = 0;
+		that._capacity = 0;
+	}
 
-    /**
-     *  Get access to the internal buffer
-     *  @return const char*
-     */
-    const char *data() const
-    {
-        // expose member
-        return _buffer;
-    }
+	/**
+	 *  Destructor
+	 */
+	virtual ~CopiedBuffer() {
+		// deallocate the buffer
+		free(_buffer);
+	}
 
-    /**
-     *  Current size of the output buffer
-     *  @return size_t
-     */
-    size_t size() const
-    {
-        // expose member
-        return _size;
-    }
+	/**
+	 *  Get access to the internal buffer
+	 *  @return const char*
+	 */
+	const char *data() const {
+		// expose member
+		return _buffer;
+	}
+
+	/**
+	 *  Current size of the output buffer
+	 *  @return size_t
+	 */
+	size_t size() const {
+		// expose member
+		return _size;
+	}
 };
 
 /**

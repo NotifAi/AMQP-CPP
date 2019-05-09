@@ -25,10 +25,11 @@ namespace AMQP {
  *  @param  exchange
  *  @param  routingkey
  */
-void DeferredReceiver::initialize(const std::string &exchange, const std::string &routingkey)
-{
-    // anybody interested in the new message?
-    if (_startCallback) _startCallback(exchange, routingkey);
+void DeferredReceiver::initialize(const std::string &exchange, const std::string &routingkey) {
+	// anybody interested in the new message?
+	if (_startCallback) {
+		_startCallback(exchange, routingkey);
+	}
 }
 
 /**
@@ -36,30 +37,34 @@ void DeferredReceiver::initialize(const std::string &exchange, const std::string
  *
  *  @param  frame   The frame to process
  */
-void DeferredReceiver::process(BasicHeaderFrame &frame)
-{
-    // make sure we stay in scope
-    auto self = lock();
+void DeferredReceiver::process(BasicHeaderFrame &frame) {
+	// make sure we stay in scope
+	auto self = lock();
 
-    // store the body size
-    _bodySize = frame.bodySize();
-    
-    // is user interested in the size?
-    if (_sizeCallback) _sizeCallback(_bodySize);
+	// store the body size
+	_bodySize = frame.bodySize();
 
-    // do we have a message?
-    if (_message)
-    {
-        // store the body size and metadata
-        _message->setBodySize(_bodySize);
-        _message->set(frame.metaData());
-    }
+	// is user interested in the size?
+	if (_sizeCallback) {
+		_sizeCallback(_bodySize);
+	}
 
-    // anybody interested in the headers?
-    if (_headerCallback) _headerCallback(frame.metaData());
+	// do we have a message?
+	if (_message) {
+		// store the body size and metadata
+		_message->setBodySize(_bodySize);
+		_message->set(frame.metaData());
+	}
 
-    // no body data expected? then we are now complete
-    if (_bodySize == 0) complete();
+	// anybody interested in the headers?
+	if (_headerCallback) {
+		_headerCallback(frame.metaData());
+	}
+
+	// no body data expected? then we are now complete
+	if (_bodySize == 0) {
+		complete();
+	}
 }
 
 /**
@@ -67,22 +72,27 @@ void DeferredReceiver::process(BasicHeaderFrame &frame)
  *
  *  @param  frame   The frame to process
  */
-void DeferredReceiver::process(BodyFrame &frame)
-{
-    // make sure we stay in scope
-    auto self = lock();
+void DeferredReceiver::process(BodyFrame &frame) {
+	// make sure we stay in scope
+	auto self = lock();
 
-    // update the bytes still to receive
-    _bodySize -= frame.payloadSize();
+	// update the bytes still to receive
+	_bodySize -= frame.payloadSize();
 
-    // anybody interested in the data?
-    if (_dataCallback) _dataCallback(frame.payload(), frame.payloadSize());
+	// anybody interested in the data?
+	if (_dataCallback) {
+		_dataCallback(frame.payload(), frame.payloadSize());
+	}
 
-    // do we have a message? then append the data
-    if (_message) _message->append(frame.payload(), frame.payloadSize());
+	// do we have a message? then append the data
+	if (_message) {
+		_message->append(frame.payload(), frame.payloadSize());
+	}
 
-    // if all bytes were received we are now complete
-    if (_bodySize == 0) complete();
+	// if all bytes were received we are now complete
+	if (_bodySize == 0) {
+		complete();
+	}
 }
 
 /**

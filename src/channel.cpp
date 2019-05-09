@@ -28,16 +28,20 @@ namespace AMQP {
  *  @param  connection
  *  @throws std::runtime_error
  */
-Channel::Channel(Connection *connection) : _implementation(new ChannelImpl())
-{
-    // check if the connection is indeed usable
-    if (!connection->usable()) throw std::runtime_error("failed to open channel: connection is not active");
-    
-    // attach to the connection
-    if (_implementation->attach(connection)) return;
-    
-    // this failed, max number of channels has been reached
-    throw std::runtime_error("failed to open channel: max number of channels has been reached");
+Channel::Channel(Connection *connection)
+	: _implementation(new ChannelImpl()) {
+	// check if the connection is indeed usable
+	if (!connection->usable()) {
+		throw std::runtime_error("failed to open channel: connection is not active");
+	}
+
+	// attach to the connection
+	if (_implementation->attach(connection)) {
+		return;
+	}
+
+	// this failed, max number of channels has been reached
+	throw std::runtime_error("failed to open channel: max number of channels has been reached");
 }
 
 /**
@@ -46,4 +50,3 @@ Channel::Channel(Connection *connection) : _implementation(new ChannelImpl())
 }
 
 
- 

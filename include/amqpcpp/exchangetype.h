@@ -19,13 +19,12 @@ namespace AMQP {
 /**
  *  The class
  */
-enum ExchangeType
-{
-    fanout,
-    direct,
-    topic,
-    headers,
-    consistent_hash
+enum ExchangeType {
+	fanout,
+	direct,
+	topic,
+	headers,
+	consistent_hash
 };
 
 /**

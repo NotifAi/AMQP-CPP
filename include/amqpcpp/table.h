@@ -31,20 +31,20 @@ private:
 	 *  We define a custom type for storing fields
 	 *  @typedef    FieldMap
 	 */
-	typedef std::map<std::string, std::shared_ptr<Field> > FieldMap;
+	typedef std::map<std::string, std::shared_ptr<Field>> FieldMap;
 
 public:
 	/**
 	 *  Constructor that creates an empty table
 	 */
-	Table() {}
+	Table() = default;
 
 	/**
 	 *  Decode the data from a received frame into a table
 	 *
 	 *  @param  frame   received frame to decode
 	 */
-	Table(ReceivedFrame &frame);
+	explicit Table(ReceivedFrame &frame);
 
 	/**
 	 *  Copy constructor

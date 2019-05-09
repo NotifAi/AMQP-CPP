@@ -22,37 +22,36 @@ namespace AMQP {
 /**
  * Class implementation
  */
-class BasicFrame : public MethodFrame
-{
+class BasicFrame : public MethodFrame {
 protected:
-    /**
-     *  Constructor
-     *  @param  channel     The channel ID
-     *  @param  size        Payload size
-     */
-    BasicFrame(uint16_t channel, uint32_t size) : MethodFrame(channel, size) {}
+	/**
+	 *  Constructor
+	 *  @param  channel     The channel ID
+	 *  @param  size        Payload size
+	 */
+	BasicFrame(uint16_t channel, uint32_t size)
+		: MethodFrame(channel, size) {}
 
-    /**
-     *  Constructor based on a received frame
-     *  @param  frame
-     */
-    BasicFrame(ReceivedFrame &frame) : MethodFrame(frame) {}
-
+	/**
+	 *  Constructor based on a received frame
+	 *  @param  frame
+	 */
+	BasicFrame(ReceivedFrame &frame)
+		: MethodFrame(frame) {}
 
 public:
-    /**
-     *  Destructor
-     */
-    virtual ~BasicFrame() {}
+	/**
+	 *  Destructor
+	 */
+	virtual ~BasicFrame() {}
 
-    /**
-     *  Class id
-     *  @return uint16_t
-     */
-    virtual uint16_t classID() const override
-    {
-        return 60;
-    }
+	/**
+	 *  Class id
+	 *  @return uint16_t
+	 */
+	virtual uint16_t classID() const override {
+		return 60;
+	}
 };
 
 /**

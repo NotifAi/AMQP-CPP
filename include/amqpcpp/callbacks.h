@@ -26,6 +26,7 @@ namespace AMQP {
  *  Forward declarations
  */
 class Message;
+
 class MetaData;
 
 /**
@@ -38,7 +39,8 @@ using FinalizeCallback      =   std::function<void()>;
 /**
  *  Declaring and deleting a queue
  */
-using QueueCallback         =   std::function<void(const std::string &name, uint32_t messagecount, uint32_t consumercount)>;
+using QueueCallback         =   std::function<void(const std::string &name, uint32_t messagecount
+                                                   , uint32_t consumercount)>;
 using DeleteCallback        =   std::function<void(uint32_t deletedmessages)>;
 
 /**
@@ -76,7 +78,8 @@ using ReturnedCallback      =   std::function<void()>;
  *  implement callbacks that return the collected message.
  */
 using MessageCallback       =   std::function<void(const Message &message, uint64_t deliveryTag, bool redelivered)>;
-using BounceCallback        =   std::function<void(const Message &message, int16_t code, const std::string &description)>;
+using BounceCallback        =   std::function<void(const Message &message, int16_t code
+                                                   , const std::string &description)>;
 
 /**
  * When using publisher confirms, AckCallback is called when server confirms that message is received

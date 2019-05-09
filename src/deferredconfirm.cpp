@@ -20,9 +20,10 @@ namespace AMQP {
  *
  *  @param  frame   The frame to process
  */
-void DeferredConfirm::process(BasicAckFrame &frame)
-{
-    if (_ackCallback) _ackCallback(frame.deliveryTag(), frame.multiple());
+void DeferredConfirm::process(BasicAckFrame &frame) {
+	if (_ackCallback) {
+		_ackCallback(frame.deliveryTag(), frame.multiple());
+	}
 }
 
 /**
@@ -30,9 +31,10 @@ void DeferredConfirm::process(BasicAckFrame &frame)
  *
  *  @param  frame   The frame to process
  */
-void DeferredConfirm::process(BasicNackFrame &frame)
-{
-    if (_nackCallback) _nackCallback(frame.deliveryTag(), frame.multiple(), frame.requeue());
+void DeferredConfirm::process(BasicNackFrame &frame) {
+	if (_nackCallback) {
+		_nackCallback(frame.deliveryTag(), frame.multiple(), frame.requeue());
+	}
 }
 
 /**

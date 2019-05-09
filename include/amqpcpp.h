@@ -31,7 +31,7 @@
 
 // fix strcasecmp on non linux platforms
 #if (defined(_WIN16) || defined(_WIN32) || defined(_WIN64) || defined(__WINDOWS__)) && !defined(__CYGWIN__)
-    #define strcasecmp _stricmp 
+	#define strcasecmp _stricmp
 #endif
 
 // forward declarations

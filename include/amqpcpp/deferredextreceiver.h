@@ -29,61 +29,60 @@ namespace AMQP {
 /**
  *  Class definition
  */
-class DeferredExtReceiver : public DeferredReceiver
-{
+class DeferredExtReceiver : public DeferredReceiver {
 protected:
-    /**
-     *  The delivery tag for the current message
-     *  @var    uint64_t
-     */
-    uint64_t _deliveryTag = 0;
+	/**
+	 *  The delivery tag for the current message
+	 *  @var    uint64_t
+	 */
+	uint64_t _deliveryTag = 0;
 
-    /**
-     *  Is this a redelivered message
-     *  @var    bool
-     */
-    bool _redelivered = false;
+	/**
+	 *  Is this a redelivered message
+	 *  @var    bool
+	 */
+	bool _redelivered = false;
 
-    /**
-     *  Callback for incoming messages
-     *  @var    MessageCallback
-     */
-    MessageCallback _messageCallback;
+	/**
+	 *  Callback for incoming messages
+	 *  @var    MessageCallback
+	 */
+	MessageCallback _messageCallback;
 
-    /**
-     *  Callback for when a message was complete finished
-     *  @var    DeliveredCallback
-     */
-    DeliveredCallback _deliveredCallback;
+	/**
+	 *  Callback for when a message was complete finished
+	 *  @var    DeliveredCallback
+	 */
+	DeliveredCallback _deliveredCallback;
 
+	/**
+	 *  Initialize the object to send out a message
+	 *  @param  exchange            the exchange to which the message was published
+	 *  @param  routingkey          the routing key that was used to publish the message
+	 */
+	virtual void initialize(const std::string &exchange, const std::string &routingkey) override;
 
-    /**
-     *  Initialize the object to send out a message
-     *  @param  exchange            the exchange to which the message was published
-     *  @param  routingkey          the routing key that was used to publish the message
-     */
-    virtual void initialize(const std::string &exchange, const std::string &routingkey) override;
+	/**
+	 *  Indicate that a message was done
+	 */
+	virtual void complete() override;
 
-    /**
-     *  Indicate that a message was done
-     */
-    virtual void complete() override;
+	/**
+	 *  Constructor
+	 *  @param  failed  Have we already failed?
+	 *  @param  channel The channel we are consuming on
+	 */
+	DeferredExtReceiver(bool failed, ChannelImpl *channel)
+		:
+		DeferredReceiver(failed, channel) {}
 
-    /**
-     *  Constructor
-     *  @param  failed  Have we already failed?
-     *  @param  channel The channel we are consuming on
-     */
-    DeferredExtReceiver(bool failed, ChannelImpl *channel) : 
-        DeferredReceiver(failed, channel) {}
-    
 public:
-    /**
-     *  Destructor
-     */
-    virtual ~DeferredExtReceiver() = default;
+	/**
+	 *  Destructor
+	 */
+	virtual ~DeferredExtReceiver() = default;
 };
-    
+
 /**
  *  End of namespace
  */

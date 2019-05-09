@@ -24,14 +24,14 @@ namespace AMQP {
 /**
  *  Base exception class
  */
-class Exception : public std::runtime_error
-{
+class Exception : public std::runtime_error {
 protected:
-    /**
-     *  Constructor
-     *  @param  what
-     */
-    explicit Exception(const std::string &what) : runtime_error(what) {}
+	/**
+	 *  Constructor
+	 *  @param  what
+	 */
+	explicit Exception(const std::string &what)
+		: runtime_error(what) {}
 };
 
 /**

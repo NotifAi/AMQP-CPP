@@ -25,14 +25,14 @@ namespace AMQP {
 /**
  *  Class definition
  */
-class ProtocolException : public Exception
-{
+class ProtocolException : public Exception {
 public:
-    /**
-     *  Constructor
-     *  @param  what
-     */
-    explicit ProtocolException(const std::string &what) : Exception(what) {}
+	/**
+	 *  Constructor
+	 *  @param  what
+	 */
+	explicit ProtocolException(const std::string &what)
+		: Exception(what) {}
 };
 
 /**

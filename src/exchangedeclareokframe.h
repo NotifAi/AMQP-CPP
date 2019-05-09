@@ -7,74 +7,76 @@
 /**
  *  Class definition
  */
-namespace AMQP{
+namespace AMQP {
 
 /**
  * Class implementation
  */
-class ExchangeDeclareOKFrame : public ExchangeFrame
-{
+class ExchangeDeclareOKFrame : public ExchangeFrame {
 protected:
-    /**
-     *  Encode a frame on a string buffer
-     *
-     *  @param  buffer  buffer to write frame to
-     */
-    virtual void fill(OutBuffer& buffer) const override
-    {
-        // call base
-        ExchangeFrame::fill(buffer);
-    }
+	/**
+	 *  Encode a frame on a string buffer
+	 *
+	 *  @param  buffer  buffer to write frame to
+	 */
+	virtual void fill(OutBuffer &buffer) const override {
+		// call base
+		ExchangeFrame::fill(buffer);
+	}
+
 public:
-    /**
-     *  Construct an exchange declare ok frame
-     *
-     *  @param  channel     channel we're working on
-     */
-    ExchangeDeclareOKFrame(uint16_t channel) : ExchangeFrame(channel, 0) {}
+	/**
+	 *  Construct an exchange declare ok frame
+	 *
+	 *  @param  channel     channel we're working on
+	 */
+	ExchangeDeclareOKFrame(uint16_t channel)
+		: ExchangeFrame(channel, 0) {}
 
-    /**
-     *  Decode an exchange declare acknowledgement frame
-     *
-     *  @param  frame   received frame to decode
-     */
-    ExchangeDeclareOKFrame(ReceivedFrame &frame) :
-        ExchangeFrame(frame)
-    {}
+	/**
+	 *  Decode an exchange declare acknowledgement frame
+	 *
+	 *  @param  frame   received frame to decode
+	 */
+	ExchangeDeclareOKFrame(ReceivedFrame &frame)
+		:
+		ExchangeFrame(frame) {}
 
-    /**
-     *  Destructor
-     */
-    virtual ~ExchangeDeclareOKFrame() {}
+	/**
+	 *  Destructor
+	 */
+	virtual ~ExchangeDeclareOKFrame() {}
 
-    /**
-     *  returns the method id
-     *  @return uint16_t
-     */
-    virtual uint16_t methodID() const override
-    {
-        return 11;
-    }
+	/**
+	 *  returns the method id
+	 *  @return uint16_t
+	 */
+	virtual uint16_t methodID() const override {
+		return 11;
+	}
 
-    /**
-     *  Process the frame
-     *  @param  connection      The connection over which it was received
-     *  @return bool            Was it succesfully processed?
-     */
-    virtual bool process(ConnectionImpl *connection) override
-    {
-        // we need the appropriate channel
-        auto channel = connection->channel(this->channel());
+	/**
+	 *  Process the frame
+	 *  @param  connection      The connection over which it was received
+	 *  @return bool            Was it succesfully processed?
+	 */
+	virtual bool process(ConnectionImpl *connection) override {
+		// we need the appropriate channel
+		auto channel = connection->channel(this->channel());
 
-        // channel does not exist
-        if(!channel) return false;
+		// channel does not exist
+		if (!channel) {
+			return false;
+		}
 
-        // report exchange declare ok
-        if (channel->reportSuccess()) channel->onSynchronized();
+		// report exchange declare ok
+		if (channel->reportSuccess()) {
+			channel->onSynchronized();
+		}
 
-        // done
-        return true;
-    }
+		// done
+		return true;
+	}
 };
 
 /**

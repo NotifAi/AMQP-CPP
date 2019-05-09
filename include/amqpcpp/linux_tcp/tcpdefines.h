@@ -21,7 +21,7 @@
  */
 inline void set_sockopt_nosigpipe(int socket)
 {
-    int optval = 1;
-    setsockopt(socket, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval));
+	int optval = 1;
+	setsockopt(socket, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval));
 }
 #endif

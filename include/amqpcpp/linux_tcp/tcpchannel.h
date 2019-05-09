@@ -20,39 +20,39 @@ namespace AMQP {
 /**
  *  Class definition
  */
-class TcpChannel : public Channel
-{
+class TcpChannel : public Channel {
 public:
-    /**
-     *  Constructor
-     * 
-     *  The passed in connection pointer must remain valid for the 
-     *  lifetime of the channel. A constructor is thrown if the channel 
-     *  cannot be connected (because the connection is already closed or
-     *  because max number of channels has been reached)
-     * 
-     *  @param  connection
-     *  @throws std::runtime_error
-     */
-    TcpChannel(TcpConnection *connection) :
-        Channel(&connection->_connection) {}
-        
-    /**
-     *  Destructor
-     */
-    virtual ~TcpChannel() {}
+	/**
+	 *  Constructor
+	 *
+	 *  The passed in connection pointer must remain valid for the
+	 *  lifetime of the channel. A constructor is thrown if the channel
+	 *  cannot be connected (because the connection is already closed or
+	 *  because max number of channels has been reached)
+	 *
+	 *  @param  connection
+	 *  @throws std::runtime_error
+	 */
+	TcpChannel(TcpConnection *connection)
+		:
+		Channel(&connection->_connection) {}
 
-    /**
-     *  Copying is not allowed.
-     *  @param  other
-     */
-    TcpChannel(const TcpChannel &other) = delete;
+	/**
+	 *  Destructor
+	 */
+	virtual ~TcpChannel() {}
 
-    /**
-     *  But movement is allowed
-     *  @param  other
-     */
-    TcpChannel(TcpChannel &&other) = default;
+	/**
+	 *  Copying is not allowed.
+	 *  @param  other
+	 */
+	TcpChannel(const TcpChannel &other) = delete;
+
+	/**
+	 *  But movement is allowed
+	 *  @param  other
+	 */
+	TcpChannel(TcpChannel &&other) = default;
 };
 
 /**

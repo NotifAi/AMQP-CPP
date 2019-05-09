@@ -29,7 +29,9 @@ namespace AMQP {
  *  Forward declarations
  */
 class Table;
+
 class Array;
+
 class Field;
 
 /**
@@ -227,7 +229,7 @@ public:
 	 *  Get a boolean
 	 *  @return bool
 	 */
-	template<typename TARGET>
+	template <typename TARGET>
 	operator TARGET() const {
 		// retrieve the value
 		return _source->get(_index);

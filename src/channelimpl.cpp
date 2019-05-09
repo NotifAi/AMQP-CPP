@@ -52,10 +52,11 @@ ChannelImpl::ChannelImpl() = default;
 /**
  *  Destructor
  */
-ChannelImpl::~ChannelImpl()
-{
-    // remove this channel from the connection (but not if the connection is already destructed)
-    if (_connection) _connection->remove(this);
+ChannelImpl::~ChannelImpl() {
+	// remove this channel from the connection (but not if the connection is already destructed)
+	if (_connection) {
+		_connection->remove(this);
+	}
 }
 
 /**
@@ -66,31 +67,42 @@ ChannelImpl::~ChannelImpl()
  *
  *  @param  callback    the callback to execute
  */
-void ChannelImpl::onError(const ErrorCallback &callback)
-{
-    // store callback
-    _errorCallback = callback;
+void ChannelImpl::onError(const ErrorCallback &callback) {
+	// store callback
+	_errorCallback = callback;
 
-    // if the channel is usable, all is ok
-    if (usable()) return;
-    
-    // is the channel closing down?
-    if (_state == state_closing) return callback("Channel is closing down");
+	// if the channel is usable, all is ok
+	if (usable()) {
+		return;
+	}
 
-    // the channel is closed, but what is the connection doing?
-    if (_connection == nullptr) return callback("Channel is not linked to a connection");
-    
-    // if the connection is valid, this is a pure channel error
-    if (_connection->ready()) return callback("Channel is in an error state, but the connection is valid");
+	// is the channel closing down?
+	if (_state == state_closing) {
+		return callback("Channel is closing down");
+	}
 
-    // the connection is closing down
-    if (_connection->closing()) return callback("Channel is in an error state, the AMQP connection is closing down");
+	// the channel is closed, but what is the connection doing?
+	if (_connection == nullptr) {
+		return callback("Channel is not linked to a connection");
+	}
 
-    // the connection is already closed
-    if (_connection->closed()) return callback("Channel is in an error state, the AMQP connection has been closed");
-   
-    // direct call if channel is already in error state
-    callback("Channel is in error state, something went wrong with the AMQP connection");
+	// if the connection is valid, this is a pure channel error
+	if (_connection->ready()) {
+		return callback("Channel is in an error state, but the connection is valid");
+	}
+
+	// the connection is closing down
+	if (_connection->closing()) {
+		return callback("Channel is in an error state, the AMQP connection is closing down");
+	}
+
+	// the connection is already closed
+	if (_connection->closed()) {
+		return callback("Channel is in an error state, the AMQP connection has been closed");
+	}
+
+	// direct call if channel is already in error state
+	callback("Channel is in error state, something went wrong with the AMQP connection");
 }
 
 /**
@@ -98,66 +110,66 @@ void ChannelImpl::onError(const ErrorCallback &callback)
  *  @param  connection
  *  @return bool
  */
-bool ChannelImpl::attach(Connection *connection)
-{
-    // get connection impl
-    _connection = &connection->_implementation;
-    
-    // retrieve an ID
-    _id = _connection->add(shared_from_this());
-    
-    // check if the id is valid
-    if (_id == 0)
-    {
-        // this is invalid
-        _state = state_closed;
-        
-        // failure
-        return false;
-    }
-    else 
-    {
-        // assume channel is connected
-        _state = state_connected;
-    
-        // send the open frame
-        if (send(ChannelOpenFrame(_id))) return true;
+bool ChannelImpl::attach(Connection *connection) {
+	// get connection impl
+	_connection = &connection->_implementation;
 
-        // this is an error
-        _state = state_closed;
-        
-        // report failure
-        return false;
-    }
-}    
+	// retrieve an ID
+	_id = _connection->add(shared_from_this());
+
+	// check if the id is valid
+	if (_id == 0) {
+		// this is invalid
+		_state = state_closed;
+
+		// failure
+		return false;
+	} else {
+		// assume channel is connected
+		_state = state_connected;
+
+		// send the open frame
+		if (send(ChannelOpenFrame(_id))) {
+			return true;
+		}
+
+		// this is an error
+		_state = state_closed;
+
+		// report failure
+		return false;
+	}
+}
 
 /**
  *  Push a deferred result
  *  @param  result          The deferred object to push
  */
-Deferred &ChannelImpl::push(const std::shared_ptr<Deferred> &deferred)
-{
-    // do we already have an oldest?
-    if (!_oldestCallback) _oldestCallback = deferred;
+Deferred &ChannelImpl::push(const std::shared_ptr<Deferred> &deferred) {
+	// do we already have an oldest?
+	if (!_oldestCallback) {
+		_oldestCallback = deferred;
+	}
 
-    // do we already have a newest?
-    if (_newestCallback) _newestCallback->add(deferred);
+	// do we already have a newest?
+	if (_newestCallback) {
+		_newestCallback->add(deferred);
+	}
 
-    // store newest callback
-    _newestCallback = deferred;
+	// store newest callback
+	_newestCallback = deferred;
 
-    // done
-    return *deferred;
+	// done
+	return *deferred;
 }
 
 /**
  *  Send a frame and push a deferred result
  *  @param  frame           The frame to send
  */
-Deferred &ChannelImpl::push(const Frame &frame)
-{
-    // send the frame, and push the result
-    return push(std::make_shared<Deferred>(!send(frame)));
+Deferred &ChannelImpl::push(const Frame &frame) {
+	// send the frame, and push the result
+	return push(std::make_shared<Deferred>(!send(frame)));
 }
 
 /**
@@ -168,10 +180,9 @@ Deferred &ChannelImpl::push(const Frame &frame)
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::pause()
-{
-    // send a channel flow frame
-    return push(ChannelFlowFrame(_id, false));
+Deferred &ChannelImpl::pause() {
+	// send a channel flow frame
+	return push(ChannelFlowFrame(_id, false));
 }
 
 /**
@@ -182,10 +193,9 @@ Deferred &ChannelImpl::pause()
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::resume()
-{
-    // send a channel flow frame
-    return push(ChannelFlowFrame(_id, true));
+Deferred &ChannelImpl::resume() {
+	// send a channel flow frame
+	return push(ChannelFlowFrame(_id, true));
 }
 
 /**
@@ -194,19 +204,18 @@ Deferred &ChannelImpl::resume()
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-DeferredConfirm &ChannelImpl::confirmSelect()
-{
-    // the frame to send
-    ConfirmSelectFrame frame(_id);
+DeferredConfirm &ChannelImpl::confirmSelect() {
+	// the frame to send
+	ConfirmSelectFrame frame(_id);
 
-    // send the frame, and create deferred object
-    _confirm = std::make_shared<DeferredConfirm>(!send(frame));
+	// send the frame, and create deferred object
+	_confirm = std::make_shared<DeferredConfirm>(!send(frame));
 
-    // push to list
-    push(_confirm);
+	// push to list
+	push(_confirm);
 
-    // done
-    return *_confirm;
+	// done
+	return *_confirm;
 }
 
 /**
@@ -215,10 +224,9 @@ DeferredConfirm &ChannelImpl::confirmSelect()
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::startTransaction()
-{
-    // send a transaction frame
-    return push(TransactionSelectFrame(_id));
+Deferred &ChannelImpl::startTransaction() {
+	// send a transaction frame
+	return push(TransactionSelectFrame(_id));
 }
 
 /**
@@ -227,10 +235,9 @@ Deferred &ChannelImpl::startTransaction()
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::commitTransaction()
-{
-    // send a transaction frame
-    return push(TransactionCommitFrame(_id));
+Deferred &ChannelImpl::commitTransaction() {
+	// send a transaction frame
+	return push(TransactionCommitFrame(_id));
 }
 
 /**
@@ -239,10 +246,9 @@ Deferred &ChannelImpl::commitTransaction()
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::rollbackTransaction()
-{
-    // send a transaction frame
-    return push(TransactionRollbackFrame(_id));
+Deferred &ChannelImpl::rollbackTransaction() {
+	// send a transaction frame
+	return push(TransactionRollbackFrame(_id));
 }
 
 /**
@@ -251,19 +257,22 @@ Deferred &ChannelImpl::rollbackTransaction()
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::close()
-{
-    // this is completely pointless if already closed
-    if (!usable()) return push(std::make_shared<Deferred>(_state == state_closing));
-    
-    // send a channel close frame
-    auto &handler = push(ChannelCloseFrame(_id));
+Deferred &ChannelImpl::close() {
+	// this is completely pointless if already closed
+	if (!usable()) {
+		return push(std::make_shared<Deferred>(_state == state_closing));
+	}
 
-    // was the frame sent and are we still alive?
-    if (handler) _state = state_closing;
+	// send a channel close frame
+	auto &handler = push(ChannelCloseFrame(_id));
 
-    // done
-    return handler;
+	// was the frame sent and are we still alive?
+	if (handler) {
+		_state = state_closing;
+	}
+
+	// done
+	return handler;
 }
 
 /**
@@ -277,27 +286,33 @@ Deferred &ChannelImpl::close()
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::declareExchange(const std::string &name, ExchangeType type, int flags, const Table &arguments)
-{
-    // convert exchange type
-    const char *exchangeType = "";
-    
-    // convert the exchange type into a string
-    if      (type == ExchangeType::fanout)          exchangeType = "fanout";
-    else if (type == ExchangeType::direct)          exchangeType = "direct";
-    else if (type == ExchangeType::topic)           exchangeType = "topic";
-    else if (type == ExchangeType::headers)         exchangeType = "headers";
-    else if (type == ExchangeType::consistent_hash) exchangeType = "x-consistent-hash";
+Deferred &ChannelImpl::declareExchange(const std::string &name, ExchangeType type, int flags, const Table &arguments) {
+	// convert exchange type
+	const char *exchangeType = "";
 
-    // the boolean options
-    bool passive = (flags & AMQP::passive) != 0;
-    bool durable = (flags & AMQP::durable) != 0;
-    bool autodelete = (flags & AMQP::autodelete) != 0;
-    bool internal = (flags & AMQP::internal) != 0;
-    bool nowait = (flags & AMQP::nowait) != 0;
+	// convert the exchange type into a string
+	if (type == ExchangeType::fanout) {
+		exchangeType = "fanout";
+	} else if (type == ExchangeType::direct) {
+		exchangeType = "direct";
+	} else if (type == ExchangeType::topic) {
+		exchangeType = "topic";
+	} else if (type == ExchangeType::headers) {
+		exchangeType = "headers";
+	} else if (type == ExchangeType::consistent_hash) {
+		exchangeType = "x-consistent-hash";
+	}
 
-    // send declare exchange frame
-    return push(ExchangeDeclareFrame(_id, name, exchangeType, passive, durable, autodelete, internal, nowait, arguments));
+	// the boolean options
+	bool passive = (flags & AMQP::passive) != 0;
+	bool durable = (flags & AMQP::durable) != 0;
+	bool autodelete = (flags & AMQP::autodelete) != 0;
+	bool internal = (flags & AMQP::internal) != 0;
+	bool nowait = (flags & AMQP::nowait) != 0;
+
+	// send declare exchange frame
+	return push(
+		ExchangeDeclareFrame(_id, name, exchangeType, passive, durable, autodelete, internal, nowait, arguments));
 }
 
 /**
@@ -311,10 +326,10 @@ Deferred &ChannelImpl::declareExchange(const std::string &name, ExchangeType typ
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::bindExchange(const std::string &source, const std::string &target, const std::string &routingkey, const Table &arguments)
-{
-    // send exchange bind frame
-    return push(ExchangeBindFrame(_id, target, source, routingkey, false, arguments));
+Deferred &ChannelImpl::bindExchange(const std::string &source, const std::string &target, const std::string &routingkey
+                                    , const Table &arguments) {
+	// send exchange bind frame
+	return push(ExchangeBindFrame(_id, target, source, routingkey, false, arguments));
 }
 
 /**
@@ -328,10 +343,11 @@ Deferred &ChannelImpl::bindExchange(const std::string &source, const std::string
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::unbindExchange(const std::string &source, const std::string &target, const std::string &routingkey, const Table &arguments)
-{
-    // send exchange unbind frame
-    return push(ExchangeUnbindFrame(_id, target, source, routingkey, false, arguments));
+Deferred &
+ChannelImpl::unbindExchange(const std::string &source, const std::string &target, const std::string &routingkey
+                            , const Table &arguments) {
+	// send exchange unbind frame
+	return push(ExchangeUnbindFrame(_id, target, source, routingkey, false, arguments));
 }
 
 /**
@@ -343,10 +359,9 @@ Deferred &ChannelImpl::unbindExchange(const std::string &source, const std::stri
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::removeExchange(const std::string &name, int flags)
-{
-    // send delete exchange frame
-    return push(ExchangeDeleteFrame(_id, name, (flags & ifunused) != 0, false));
+Deferred &ChannelImpl::removeExchange(const std::string &name, int flags) {
+	// send delete exchange frame
+	return push(ExchangeDeleteFrame(_id, name, (flags & ifunused) != 0, false));
 }
 
 /**
@@ -358,19 +373,19 @@ Deferred &ChannelImpl::removeExchange(const std::string &name, int flags)
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-DeferredQueue &ChannelImpl::declareQueue(const std::string &name, int flags, const Table &arguments)
-{
-    // the frame to send
-    QueueDeclareFrame frame(_id, name, (flags & passive) != 0, (flags & durable) != 0, (flags & exclusive) != 0, (flags & autodelete) != 0, false, arguments);
+DeferredQueue &ChannelImpl::declareQueue(const std::string &name, int flags, const Table &arguments) {
+	// the frame to send
+	QueueDeclareFrame frame(_id, name, (flags & passive) != 0, (flags & durable) != 0, (flags & exclusive) != 0,
+		(flags & autodelete) != 0, false, arguments);
 
-    // send the queuedeclareframe
-    auto result = std::make_shared<DeferredQueue>(!send(frame));
+	// send the queuedeclareframe
+	auto result = std::make_shared<DeferredQueue>(!send(frame));
 
-    // add the deferred result
-    push(result);
+	// add the deferred result
+	push(result);
 
-    // done
-    return *result;
+	// done
+	return *result;
 }
 
 /**
@@ -384,10 +399,11 @@ DeferredQueue &ChannelImpl::declareQueue(const std::string &name, int flags, con
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::bindQueue(const std::string &exchangeName, const std::string &queueName, const std::string &routingkey, const Table &arguments)
-{
-    // send the bind queue frame
-    return push(QueueBindFrame(_id, queueName, exchangeName, routingkey, false, arguments));
+Deferred &
+ChannelImpl::bindQueue(const std::string &exchangeName, const std::string &queueName, const std::string &routingkey
+                       , const Table &arguments) {
+	// send the bind queue frame
+	return push(QueueBindFrame(_id, queueName, exchangeName, routingkey, false, arguments));
 }
 
 /**
@@ -401,10 +417,10 @@ Deferred &ChannelImpl::bindQueue(const std::string &exchangeName, const std::str
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::unbindQueue(const std::string &exchange, const std::string &queue, const std::string &routingkey, const Table &arguments)
-{
-    // send the unbind queue frame
-    return push(QueueUnbindFrame(_id, queue, exchange, routingkey, arguments));
+Deferred &ChannelImpl::unbindQueue(const std::string &exchange, const std::string &queue, const std::string &routingkey
+                                   , const Table &arguments) {
+	// send the unbind queue frame
+	return push(QueueUnbindFrame(_id, queue, exchange, routingkey, arguments));
 }
 
 /**
@@ -424,19 +440,18 @@ Deferred &ChannelImpl::unbindQueue(const std::string &exchange, const std::strin
  *
  *  });
  */
-DeferredDelete &ChannelImpl::purgeQueue(const std::string &name)
-{
-    // the frame to send
-    QueuePurgeFrame frame(_id, name, false);
+DeferredDelete &ChannelImpl::purgeQueue(const std::string &name) {
+	// the frame to send
+	QueuePurgeFrame frame(_id, name, false);
 
-    // send the frame, and create deferred object
-    auto deferred = std::make_shared<DeferredDelete>(!send(frame));
+	// send the frame, and create deferred object
+	auto deferred = std::make_shared<DeferredDelete>(!send(frame));
 
-    // push to list
-    push(deferred);
+	// push to list
+	push(deferred);
 
-    // done
-    return *deferred;
+	// done
+	return *deferred;
 }
 
 /**
@@ -457,19 +472,18 @@ DeferredDelete &ChannelImpl::purgeQueue(const std::string &name)
  *
  *  });
  */
-DeferredDelete &ChannelImpl::removeQueue(const std::string &name, int flags)
-{
-    // the frame to send
-    QueueDeleteFrame frame(_id, name, (flags & ifunused) != 0, (flags & ifempty) != 0, false);
+DeferredDelete &ChannelImpl::removeQueue(const std::string &name, int flags) {
+	// the frame to send
+	QueueDeleteFrame frame(_id, name, (flags & ifunused) != 0, (flags & ifempty) != 0, false);
 
-    // send the frame, and create deferred object
-    auto deferred = std::make_shared<DeferredDelete>(!send(frame));
+	// send the frame, and create deferred object
+	auto deferred = std::make_shared<DeferredDelete>(!send(frame));
 
-    // push to list
-    push(deferred);
+	// push to list
+	push(deferred);
 
-    // done
-    return *deferred;
+	// done
+	return *deferred;
 }
 
 /**
@@ -483,56 +497,69 @@ DeferredDelete &ChannelImpl::removeQueue(const std::string &name, int flags)
  *  @param  flags
  *  @return DeferredPublisher
  */
-DeferredPublisher &ChannelImpl::publish(const std::string &exchange, const std::string &routingKey, const Envelope &envelope, int flags)
-{
-    // we are going to send out multiple frames, each one will trigger a call to the handler,
-    // which in turn could destruct the channel object, we need to monitor that
-    Monitor monitor(this);
+DeferredPublisher &
+ChannelImpl::publish(const std::string &exchange, const std::string &routingKey, const Envelope &envelope, int flags) {
+	// we are going to send out multiple frames, each one will trigger a call to the handler,
+	// which in turn could destruct the channel object, we need to monitor that
+	Monitor monitor(this);
 
-    // @todo do not copy the entire buffer to individual frames
-    
-    // make sure we have a deferred object to return
-    if (!_publisher) _publisher.reset(new DeferredPublisher(this));
+	// @todo do not copy the entire buffer to individual frames
 
-    // send the publish frame
-    if (!send(BasicPublishFrame(_id, exchange, routingKey, (flags & mandatory) != 0, (flags & immediate) != 0))) return *_publisher;
+	// make sure we have a deferred object to return
+	if (!_publisher) {
+		_publisher.reset(new DeferredPublisher(this));
+	}
 
-    // channel still valid?
-    if (!monitor.valid()) return *_publisher;
+	// send the publish frame
+	if (!send(BasicPublishFrame(_id, exchange, routingKey, (flags & mandatory) != 0, (flags & immediate) != 0))) {
+		return *_publisher;
+	}
 
-    // send header
-    if (!send(BasicHeaderFrame(_id, envelope))) return *_publisher;
+	// channel still valid?
+	if (!monitor.valid()) {
+		return *_publisher;
+	}
 
-    // channel and connection still valid?
-    if (!monitor.valid() || !_connection) return *_publisher;
+	// send header
+	if (!send(BasicHeaderFrame(_id, envelope))) {
+		return *_publisher;
+	}
 
-    // the max payload size is the max frame size minus the bytes for headers and trailer
-    uint32_t maxpayload = _connection->maxPayload();
-    uint64_t bytessent = 0;
+	// channel and connection still valid?
+	if (!monitor.valid() || !_connection) {
+		return *_publisher;
+	}
 
-    // the buffer
-    const char *data = envelope.body();
-    uint64_t bytesleft = envelope.bodySize();
+	// the max payload size is the max frame size minus the bytes for headers and trailer
+	uint32_t maxpayload = _connection->maxPayload();
+	uint64_t bytessent = 0;
 
-    // split up the body in multiple frames depending on the max frame size
-    while (bytesleft > 0)
-    {
-        // size of this chunk
-        uint64_t chunksize = std::min(static_cast<uint64_t>(maxpayload), bytesleft);
+	// the buffer
+	const char *data = envelope.body();
+	uint64_t bytesleft = envelope.bodySize();
 
-        // send out a body frame
-        if (!send(BodyFrame(_id, data + bytessent, (uint32_t)chunksize))) return *_publisher;
+	// split up the body in multiple frames depending on the max frame size
+	while (bytesleft > 0) {
+		// size of this chunk
+		uint64_t chunksize = std::min(static_cast<uint64_t>(maxpayload), bytesleft);
 
-        // channel still valid?
-        if (!monitor.valid()) return *_publisher;
+		// send out a body frame
+		if (!send(BodyFrame(_id, data + bytessent, (uint32_t)chunksize))) {
+			return *_publisher;
+		}
 
-        // update counters
-        bytessent += chunksize;
-        bytesleft -= chunksize;
-    }
+		// channel still valid?
+		if (!monitor.valid()) {
+			return *_publisher;
+		}
 
-    // done
-    return *_publisher;
+		// update counters
+		bytessent += chunksize;
+		bytesleft -= chunksize;
+	}
+
+	// done
+	return *_publisher;
 }
 
 /**
@@ -545,10 +572,9 @@ DeferredPublisher &ChannelImpl::publish(const std::string &exchange, const std::
  *  @param  prefetchCount       number of messages to fetch
  *  @param  global              share counter between all consumers on the same channel
  */
-Deferred &ChannelImpl::setQos(uint16_t prefetchCount, bool global)
-{
-    // send a qos frame
-    return push(BasicQosFrame(_id, prefetchCount, global));
+Deferred &ChannelImpl::setQos(uint16_t prefetchCount, bool global) {
+	// send a qos frame
+	return push(BasicQosFrame(_id, prefetchCount, global));
 }
 
 /**
@@ -571,19 +597,20 @@ Deferred &ChannelImpl::setQos(uint16_t prefetchCount, bool global)
  *
  *  });
  */
-DeferredConsumer& ChannelImpl::consume(const std::string &queue, const std::string &tag, int flags, const Table &arguments)
-{
-    // the frame to send
-    BasicConsumeFrame frame(_id, queue, tag, (flags & nolocal) != 0, (flags & noack) != 0, (flags & exclusive) != 0, false, arguments);
+DeferredConsumer &
+ChannelImpl::consume(const std::string &queue, const std::string &tag, int flags, const Table &arguments) {
+	// the frame to send
+	BasicConsumeFrame frame(_id, queue, tag, (flags & nolocal) != 0, (flags & noack) != 0, (flags & exclusive) != 0
+	                        , false, arguments);
 
-    // send the frame, and create deferred object
-    auto deferred = std::make_shared<DeferredConsumer>(this, !send(frame));
+	// send the frame, and create deferred object
+	auto deferred = std::make_shared<DeferredConsumer>(this, !send(frame));
 
-    // push to list
-    push(deferred);
+	// push to list
+	push(deferred);
 
-    // done
-    return *deferred;
+	// done
+	return *deferred;
 }
 
 /**
@@ -603,19 +630,18 @@ DeferredConsumer& ChannelImpl::consume(const std::string &queue, const std::stri
  *
  *  });
  */
-DeferredCancel &ChannelImpl::cancel(const std::string &tag)
-{
-    // the cancel frame to send
-    BasicCancelFrame frame(_id, tag, false);
+DeferredCancel &ChannelImpl::cancel(const std::string &tag) {
+	// the cancel frame to send
+	BasicCancelFrame frame(_id, tag, false);
 
-    // send the frame, and create deferred object
-    auto deferred = std::make_shared<DeferredCancel>(this, !send(frame));
+	// send the frame, and create deferred object
+	auto deferred = std::make_shared<DeferredCancel>(this, !send(frame));
 
-    // push to list
-    push(deferred);
+	// push to list
+	push(deferred);
 
-    // done
-    return *deferred;
+	// done
+	return *deferred;
 }
 
 /**
@@ -650,19 +676,18 @@ DeferredCancel &ChannelImpl::cancel(const std::string &tag)
  * 
  *  });
  */
-DeferredGet &ChannelImpl::get(const std::string &queue, int flags)
-{
-    // the get frame to send
-    BasicGetFrame frame(_id, queue, (flags & noack) != 0);
-    
-    // send the frame, and create deferred object
-    auto deferred = std::make_shared<DeferredGet>(this, !send(frame));
+DeferredGet &ChannelImpl::get(const std::string &queue, int flags) {
+	// the get frame to send
+	BasicGetFrame frame(_id, queue, (flags & noack) != 0);
 
-    // push to list
-    push(deferred);
+	// send the frame, and create deferred object
+	auto deferred = std::make_shared<DeferredGet>(this, !send(frame));
 
-    // done
-    return *deferred;
+	// push to list
+	push(deferred);
+
+	// done
+	return *deferred;
 }
 
 /**
@@ -671,10 +696,9 @@ DeferredGet &ChannelImpl::get(const std::string &queue, int flags)
  *  @param  flags               optional flags
  *  @return bool
  */
-bool ChannelImpl::ack(uint64_t deliveryTag, int flags)
-{
-    // send an ack frame
-    return send(BasicAckFrame(_id, deliveryTag, (flags & multiple) != 0));
+bool ChannelImpl::ack(uint64_t deliveryTag, int flags) {
+	// send an ack frame
+	return send(BasicAckFrame(_id, deliveryTag, (flags & multiple) != 0));
 }
 
 /**
@@ -683,19 +707,15 @@ bool ChannelImpl::ack(uint64_t deliveryTag, int flags)
  *  @param  flags               optional flags
  *  @return bool
  */
-bool ChannelImpl::reject(uint64_t deliveryTag, int flags)
-{
-    // should we reject multiple messages?
-    if (flags & multiple)
-    {
-        // send a nack frame
-        return send(BasicNackFrame(_id, deliveryTag, true, (flags & requeue) != 0));
-    }
-    else
-    {
-        // send a reject frame
-        return send(BasicRejectFrame(_id, deliveryTag, (flags & requeue) != 0));
-    }
+bool ChannelImpl::reject(uint64_t deliveryTag, int flags) {
+	// should we reject multiple messages?
+	if (flags & multiple) {
+		// send a nack frame
+		return send(BasicNackFrame(_id, deliveryTag, true, (flags & requeue) != 0));
+	} else {
+		// send a reject frame
+		return send(BasicRejectFrame(_id, deliveryTag, (flags & requeue) != 0));
+	}
 }
 
 /**
@@ -705,10 +725,9 @@ bool ChannelImpl::reject(uint64_t deliveryTag, int flags)
  *  This function returns a deferred handler. Callbacks can be installed
  *  using onSuccess(), onError() and onFinalize() methods.
  */
-Deferred &ChannelImpl::recover(int flags)
-{
-    // send a nack frame
-    return push(BasicRecoverFrame(_id, (flags & requeue) != 0));
+Deferred &ChannelImpl::recover(int flags) {
+	// send a nack frame
+	return push(BasicRecoverFrame(_id, (flags & requeue) != 0));
 }
 
 /**
@@ -716,70 +735,74 @@ Deferred &ChannelImpl::recover(int flags)
  *  @param  frame       frame to send
  *  @return bool        was the frame sent?
  */
-bool ChannelImpl::send(const Frame &frame)
-{
-    // skip if channel is not connected
-    if (_state == state_closed || !_connection) return false;
+bool ChannelImpl::send(const Frame &frame) {
+	// skip if channel is not connected
+	if (_state == state_closed || !_connection) {
+		return false;
+	}
 
-    // if we're busy closing, we pretend that the send operation was a
-    // success. this causes the deferred object to be created, and to be
-    // added to the list of deferred objects. it will be notified about
-    // the error when the close operation succeeds
-    if (_state == state_closing) return true;
-    
-    // are we currently in synchronous mode or are there
-    // other frames waiting for their turn to be sent?
-    if (_synchronous || !_queue.empty())
-    {
-        // we need to wait until the synchronous frame has
-        // been processed, so queue the frame until it was
-        _queue.emplace(frame.synchronous(), frame);
+	// if we're busy closing, we pretend that the send operation was a
+	// success. this causes the deferred object to be created, and to be
+	// added to the list of deferred objects. it will be notified about
+	// the error when the close operation succeeds
+	if (_state == state_closing) {
+		return true;
+	}
 
-        // it was of course not actually sent but we pretend
-        // that it was, because no error occured
-        return true;
-    }
+	// are we currently in synchronous mode or are there
+	// other frames waiting for their turn to be sent?
+	if (_synchronous || !_queue.empty()) {
+		// we need to wait until the synchronous frame has
+		// been processed, so queue the frame until it was
+		_queue.emplace(frame.synchronous(), frame);
 
-    // send to tcp connection
-    if (!_connection->send(frame)) return false;
-    
-    // frame was sent, if this was a synchronous frame, we now have to wait
-    _synchronous = frame.synchronous();
-    
-    // done
-    return true;
+		// it was of course not actually sent but we pretend
+		// that it was, because no error occured
+		return true;
+	}
+
+	// send to tcp connection
+	if (!_connection->send(frame)) {
+		return false;
+	}
+
+	// frame was sent, if this was a synchronous frame, we now have to wait
+	_synchronous = frame.synchronous();
+
+	// done
+	return true;
 }
 
 /**
  *  Signal the channel that a synchronous operation was completed. After 
  *  this operation, waiting frames can be sent out.
  */
-void ChannelImpl::onSynchronized()
-{
-    // we are no longer waiting for synchronous operations
-    _synchronous = false;
+void ChannelImpl::onSynchronized() {
+	// we are no longer waiting for synchronous operations
+	_synchronous = false;
 
-    // we need to monitor the channel for validity
-    Monitor monitor(this);
+	// we need to monitor the channel for validity
+	Monitor monitor(this);
 
-    // send all frames while not in synchronous mode
-    while (_connection && !_synchronous && !_queue.empty())
-    {
-        // retrieve the first buffer and synchronous
-        auto &pair = _queue.front();
+	// send all frames while not in synchronous mode
+	while (_connection && !_synchronous && !_queue.empty()) {
+		// retrieve the first buffer and synchronous
+		auto &pair = _queue.front();
 
-        // mark as synchronous if necessary
-        _synchronous = pair.first;
+		// mark as synchronous if necessary
+		_synchronous = pair.first;
 
-        // send it over the connection
-        _connection->send(std::move(pair.second));
+		// send it over the connection
+		_connection->send(std::move(pair.second));
 
-        // the user space handler may have destructed this channel object
-        if (!monitor.valid()) return;
+		// the user space handler may have destructed this channel object
+		if (!monitor.valid()) {
+			return;
+		}
 
-        // remove from the list
-        _queue.pop();
-    }
+		// remove from the list
+		_queue.pop();
+	}
 }
 
 /**
@@ -787,66 +810,73 @@ void ChannelImpl::onSynchronized()
  *  @param  message             the error message
  *  @param  notifyhandler       should the channel-wide handler also be called?
  */
-void ChannelImpl::reportError(const char *message, bool notifyhandler)
-{
-    // change state
-    _state = state_closed;
-    _synchronous = false;
-    
-    // the queue of messages that still have to sent can be emptied now
-    // (we do this by moving the current queue into an unused variable)
-    auto queue(std::move(_queue));
+void ChannelImpl::reportError(const char *message, bool notifyhandler) {
+	// change state
+	_state = state_closed;
+	_synchronous = false;
 
-    // we are going to call callbacks that could destruct the channel
-    Monitor monitor(this);
+	// the queue of messages that still have to sent can be emptied now
+	// (we do this by moving the current queue into an unused variable)
+	auto queue(std::move(_queue));
 
-    // call the oldest
-    if (_oldestCallback)
-    {
-        // copy the callback (so that it can not be destructed during
-        // the "reportError" call
-        auto cb = _oldestCallback;
-        
-        // call the callback
-        auto next = cb->reportError(message);
+	// we are going to call callbacks that could destruct the channel
+	Monitor monitor(this);
 
-        // leap out if channel no longer exists
-        if (!monitor.valid()) return;
+	// call the oldest
+	if (_oldestCallback) {
+		// copy the callback (so that it can not be destructed during
+		// the "reportError" call
+		auto cb = _oldestCallback;
 
-        // set the oldest callback
-        _oldestCallback = next;
-    }
+		// call the callback
+		auto next = cb->reportError(message);
 
-    // clean up all deferred other objects
-    while (_oldestCallback)
-    {
-        // copy the callback (so that it can not be destructed during
-        // the "reportError" call
-        auto cb = _oldestCallback;
+		// leap out if channel no longer exists
+		if (!monitor.valid()) {
+			return;
+		}
 
-        // call the callback
-        auto next = cb->reportError("Channel is in error state");
+		// set the oldest callback
+		_oldestCallback = next;
+	}
 
-        // leap out if channel no longer exists
-        if (!monitor.valid()) return;
+	// clean up all deferred other objects
+	while (_oldestCallback) {
+		// copy the callback (so that it can not be destructed during
+		// the "reportError" call
+		auto cb = _oldestCallback;
 
-        // set the oldest callback
-        _oldestCallback = next;
-    }
+		// call the callback
+		auto next = cb->reportError("Channel is in error state");
 
-    // all callbacks have been processed, so we also can reset the pointer to the newest
-    _newestCallback = nullptr;
+		// leap out if channel no longer exists
+		if (!monitor.valid()) {
+			return;
+		}
 
-    // inform handler
-    if (notifyhandler && _errorCallback) _errorCallback(message);
+		// set the oldest callback
+		_oldestCallback = next;
+	}
 
-    // leap out if object no longer exists
-    if (!monitor.valid()) return;
+	// all callbacks have been processed, so we also can reset the pointer to the newest
+	_newestCallback = nullptr;
 
-    // the connection no longer has to know that this channel exists,
-    // because the channel ID is no longer in use
-    if (_connection) {_connection->remove(this);
-    _connection = nullptr;
+	// inform handler
+	if (notifyhandler && _errorCallback) {
+		_errorCallback(message);
+	}
+
+	// leap out if object no longer exists
+	if (!monitor.valid()) {
+		return;
+	}
+
+	// the connection no longer has to know that this channel exists,
+	// because the channel ID is no longer in use
+	if (_connection) {
+		_connection->remove(this);
+	}
+	_connection = nullptr;
 }
 
 /**
@@ -854,13 +884,12 @@ void ChannelImpl::reportError(const char *message, bool notifyhandler)
  *  @param  consumertag     the consumer frame
  *  @return DeferredConsumer
  */
-DeferredConsumer *ChannelImpl::consumer(const std::string &consumertag) const
-{
-    // look in the map
-    auto iter = _consumers.find(consumertag);
-    
-    // return the result
-    return iter == _consumers.end() ? nullptr : iter->second.get();
+DeferredConsumer *ChannelImpl::consumer(const std::string &consumertag) const {
+	// look in the map
+	auto iter = _consumers.find(consumertag);
+
+	// return the result
+	return iter == _consumers.end() ? nullptr : iter->second.get();
 }
 
 /**

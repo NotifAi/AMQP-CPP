@@ -20,24 +20,43 @@ namespace AMQP {
  *  All classes defined by this library
  */
 class Array;
+
 class BasicDeliverFrame;
+
 class BasicGetOKFrame;
+
 class BasicHeaderFrame;
+
 class BasicReturnFrame;
+
 class BasicAckFrame;
+
 class BasicNackFrame;
+
 class BodyFrame;
+
 class Channel;
+
 class Connection;
+
 class ConnectionHandler;
+
 class ConnectionImpl;
+
 class CopiedBuffer;
+
 class Exchange;
+
 class Frame;
+
 class Login;
+
 class Monitor;
+
 class OutBuffer;
+
 class ReceivedFrame;
+
 class Table;
 
 /**
