@@ -48,6 +48,15 @@ Array::Array(const Array &array) {
 	}
 }
 
+Array& Array::operator=(const AMQP::Array &rhs) {
+	for (auto iter = rhs._fields.begin(); iter != rhs._fields.end(); iter++) {
+		// add to this vector
+		_fields.push_back(std::shared_ptr<Field>((*iter)->clone()));
+	}
+
+	return *this;
+}
+
 /**
  *  Get a field
  *

@@ -70,9 +70,7 @@ public:
 		}
 
 		// report exchange declare ok
-		if (channel->reportSuccess()) {
-			channel->onSynchronized();
-		}
+		channel->reportSuccess();
 
 		// done
 		return true;

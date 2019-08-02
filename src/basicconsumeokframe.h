@@ -92,9 +92,7 @@ public:
 		}
 
 		// report
-		if (channel->reportSuccess(consumerTag())) {
-			channel->onSynchronized();
-		}
+		channel->reportSuccess(consumerTag());
 
 		// done
 		return true;

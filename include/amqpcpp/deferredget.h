@@ -119,29 +119,16 @@ public:
 
 	/**
 	 *  Register a function to be called when a message arrives
-	 *  This fuction is also available as onSuccess() and onMessage() because I always forget which name I gave to it
+	 *  This function is also available as onSuccess() and because I always forget which name I gave to it
 	 *  @param  callback    the callback to execute
 	 */
-	DeferredGet &onReceived(const MessageCallback &callback) {
-		// store callback
-		_messageCallback = callback;
-
-		// allow chaining
-		return *this;
-	}
-
-	/**
-	 *  Register a function to be called when a message arrives
-	 *  This fuction is also available as onSuccess() and onReceived() because I always forget which name I gave to it
-	 *  @param  callback    the callback to execute
-	 */
-	DeferredGet &onMessage(const MessageCallback &callback) {
-		// store callback
-		_messageCallback = callback;
-
-		// allow chaining
-		return *this;
-	}
+//	DeferredGet &onMessage(const MessageCallback &callback) {
+//		// store callback
+//		_messageCallback = callback;
+//
+//		// allow chaining
+//		return *this;
+//	}
 
 	/**
 	 *  Register a function to be called if no message could be fetched
@@ -162,20 +149,6 @@ public:
 	DeferredGet &onCount(const CountCallback &callback) {
 		// store callback
 		_countCallback = callback;
-
-		// allow chaining
-		return *this;
-	}
-
-	/**
-	 *  Register the function to be called when a new message is expected
-	 *
-	 *  @param  callback    The callback to invoke
-	 *  @return Same object for chaining
-	 */
-	DeferredGet &onBegin(const StartCallback &callback) {
-		// store callback
-		_startCallback = callback;
 
 		// allow chaining
 		return *this;
@@ -245,26 +218,12 @@ public:
 	}
 
 	/**
-	 *  Register a funtion to be called when a message was completely received
+	 *  Register a function to be called when a message was completely received
 	 *
 	 *  @param  callback    The callback to invoke
 	 *  @return Same object for chaining
 	 */
 	DeferredGet &onComplete(const DeliveredCallback &callback) {
-		// store callback
-		_deliveredCallback = callback;
-
-		// allow chaining
-		return *this;
-	}
-
-	/**
-	 *  Register a funtion to be called when a message was completely received
-	 *
-	 *  @param  callback    The callback to invoke
-	 *  @return Same object for chaining
-	 */
-	DeferredGet &onDelivered(const DeliveredCallback &callback) {
 		// store callback
 		_deliveredCallback = callback;
 

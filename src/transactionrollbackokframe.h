@@ -72,9 +72,7 @@ public:
 		}
 
 		// report that the channel is open
-		if (channel->reportSuccess()) {
-			channel->onSynchronized();
-		}
+		channel->reportSuccess();
 
 		// done
 		return true;

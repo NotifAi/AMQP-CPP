@@ -65,6 +65,8 @@ public:
 	 */
 	Array() {}
 
+	Array &operator= (const Array &rhs);
+
 	/**
 	 * Destructor
 	 */

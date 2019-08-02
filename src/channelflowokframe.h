@@ -92,9 +92,7 @@ public:
 		}
 
 		// report success for the call
-		if (channel->reportSuccess()) {
-			channel->onSynchronized();
-		}
+		channel->reportSuccess();
 
 		// done
 		return true;

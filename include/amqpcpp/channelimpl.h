@@ -570,6 +570,7 @@ public:
 	 *  Get the channel we're working on
 	 *  @return uint16_t
 	 */
+	[[nodiscard]]
 	uint16_t id() const {
 		return _id;
 	}
@@ -585,15 +586,16 @@ public:
 	 *  Is this channel waiting for an answer before it can send furher instructions
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool waiting() const {
 		return _synchronous || !_queue.empty();
 	}
 
 	/**
-	 *  Signal the channel that a synchronous operation was completed.
-	 *  After this operation, waiting frames can be sent out.
+	 *  Signal the channel that a synchronous operation was completed, and that any
+	 *  queued frames can be sent out.
 	 */
-	void onSynchronized();
+	void flush();
 
 	/**
 	 *  Report to the handler that the channel is opened
@@ -617,9 +619,9 @@ public:
 			_readyCallback();
 		}
 
-		// if the monitor is still valid, we exit synchronous mode now
+		// if the monitor is still valid, we flush any waiting operations
 		if (monitor.valid()) {
-			onSynchronized();
+			flush();
 		}
 	}
 
@@ -630,30 +632,7 @@ public:
 	 *
 	 *  @return bool
 	 */
-	bool reportClosed() {
-		// change state
-		_state = state_closed;
-
-		// create a monitor, because the callbacks could destruct the current object
-		Monitor monitor(this);
-
-		// and pass on to the reportSuccess() method which will call the
-		// appropriate deferred object to report the successful operation
-		bool result = reportSuccess();
-
-		// leap out if object no longer exists
-		if (!monitor.valid()) {
-			return result;
-		}
-
-		// all later deferred objects should report an error, because it
-		// was not possible to complete the instruction as the channel is
-		// now closed (but the channel onError does not have to run)
-		reportError("Channel has been closed", false);
-
-		// done
-		return result;
-	}
+	bool reportClosed();
 
 	/**
 	 *  Report success
@@ -674,6 +653,9 @@ public:
 		if (_synchronous && _queue.empty()) {
 			_synchronous = false;
 		}
+
+		// flush the queue, which will send the next operation if the current operation was synchronous
+		flush();
 
 		// we are going to call callbacks that could destruct the channel
 		Monitor monitor(this);

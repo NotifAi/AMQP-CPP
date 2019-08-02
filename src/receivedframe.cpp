@@ -308,8 +308,7 @@ bool ReceivedFrame::process(ConnectionImpl *connection) {
 		return processHeaderFrame(connection);
 	case 3:
 		return BodyFrame(*this).process(connection);
-	case 4:
-		return HeartbeatFrame(*this).process(connection);
+	case 4: [[fallthrough]];
 	case 8:
 		return HeartbeatFrame(*this).process(connection);
 	}

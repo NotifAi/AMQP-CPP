@@ -81,7 +81,11 @@ Field::operator const Array &() const {
 	// static empty array
 	static Array empty;
 
-	// return it
+	// if this is an Array then return it
+	if (auto dcp = dynamic_cast<const Array*>(this)) {
+		return *dcp;
+	}
+
 	return empty;
 }
 
@@ -92,6 +96,11 @@ Field::operator const Array &() const {
 Field::operator const Table &() const {
 	// static empty table
 	static Table empty;
+
+	// if this is a Table then return it
+	if (auto dcp = dynamic_cast<const Table*>(this)) {
+		return *dcp;
+	}
 
 	// return it
 	return empty;

@@ -128,9 +128,7 @@ public:
 		}
 
 		// report success
-		if (channel->reportSuccess(name(), messageCount(), consumerCount())) {
-			channel->onSynchronized();
-		}
+		channel->reportSuccess(name(), messageCount(), consumerCount());
 
 		// done
 		return true;

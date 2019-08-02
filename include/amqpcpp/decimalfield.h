@@ -26,6 +26,7 @@ namespace AMQP {
 /**
  *  Class implementation
  */
+// -V::690
 class DecimalField : public Field {
 /**
  *  To preserve precision the decision is made to work with the places and number.
@@ -71,9 +72,9 @@ public:
 	 *  @param  number  the integer number
 	 */
 	DecimalField(uint8_t places = 0, uint32_t number = 0)
-		:
-		_places(places)
-		, _number(number) {}
+		: _places(places)
+		, _number(number)
+	{}
 
 	/**
 	 *  Construct based on incoming data
@@ -82,6 +83,13 @@ public:
 	DecimalField(ReceivedFrame &frame) {
 		_places = frame.nextUint8();
 		_number = frame.nextUint32();
+	}
+
+	DecimalField &operator= (ReceivedFrame &rhs) {
+		_places = rhs.nextUint8();
+		_number = rhs.nextUint32();
+
+		return *this;
 	}
 
 	/**

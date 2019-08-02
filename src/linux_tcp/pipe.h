@@ -69,8 +69,10 @@ public:
 	 *  Expose the filedescriptors
 	 *  @return int
 	 */
+	 [[nodiscard]]
 	int in() const { return _fds[0]; }
 
+	[[nodiscard]]
 	int out() const { return _fds[1]; }
 
 	/**

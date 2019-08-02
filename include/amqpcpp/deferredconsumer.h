@@ -124,18 +124,6 @@ public:
 	}
 
 	/**
-	 *  Alias for onReceived() (see above)
-	 *  @param  callback    the callback to execute
-	 */
-	DeferredConsumer &onMessage(const MessageCallback &callback) {
-		// store callback
-		_messageCallback = callback;
-
-		// allow chaining
-		return *this;
-	}
-
-	/**
 	 *  RabbitMQ sends a message in multiple frames to its consumers.
 	 *  The AMQP-CPP library collects these frames and merges them into a
 	 *  single AMQP::Message object that is passed to the callback that
@@ -156,21 +144,6 @@ public:
 	 *  If you just rely on the onReceived() or onMessage() callbacks, you
 	 *  do not need any of the methods below this line.
 	 */
-
-	/**
-	 *  Register the function that is called when the start frame of a new
-	 *  consumed message is received
-	 *
-	 *  @param  callback    The callback to invoke
-	 *  @return Same object for chaining
-	 */
-	DeferredConsumer &onBegin(const StartCallback &callback) {
-		// store callback
-		_startCallback = callback;
-
-		// allow chaining
-		return *this;
-	}
 
 	/**
 	 *  Register the function that is called when the start frame of a new
@@ -237,26 +210,12 @@ public:
 	}
 
 	/**
-	 *  Register a funtion to be called when a message was completely received
+	 *  Register a function to be called when a message was completely received
 	 *
 	 *  @param  callback    The callback to invoke
 	 *  @return Same object for chaining
 	 */
 	DeferredConsumer &onComplete(const DeliveredCallback &callback) {
-		// store callback
-		_deliveredCallback = callback;
-
-		// allow chaining
-		return *this;
-	}
-
-	/**
-	 *  Register a funtion to be called when a message was completely received
-	 *
-	 *  @param  callback    The callback to invoke
-	 *  @return Same object for chaining
-	 */
-	DeferredConsumer &onDelivered(const DeliveredCallback &callback) {
 		// store callback
 		_deliveredCallback = callback;
 

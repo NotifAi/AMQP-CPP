@@ -78,6 +78,12 @@ public:
 		_byte = that._byte;
 	}
 
+	BooleanSet &operator=(const BooleanSet &that) {
+		_byte = that._byte;
+
+		return *this;
+	}
+
 	/**
 	 *  Destructor
 	 */
