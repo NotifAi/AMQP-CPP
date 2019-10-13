@@ -1,7 +1,7 @@
 AMQP-CPP
 ========
 
-[![Build Status](https://travis-ci.org/CopernicaMarketingSoftware/AMQP-CPP.svg?branch=master)](https://travis-ci.org/CopernicaMarketingSoftware/AMQP-CPP)
+[![Build Status](https://travis-ci.org/NotifAi/AMQP-CPP.svg?branch=master)](https://travis-ci.org/NotifAi/AMQP-CPP)
 [![Build status](https://ci.appveyor.com/api/projects/status/7xoc4y0flm0045yy/branch/master?svg=true)](https://ci.appveyor.com/project/mvdwerve/amqp-cpp/branch/master)
 
 **Are you upgrading from AMQP-CPP 3 to AMQP-CPP 4?** [Please read the upgrade instructions](#upgrading)
