@@ -31,14 +31,6 @@ matrix:
   - os: linux
     compiler: gcc
     env:
-      - COMPILER_PACKAGE=g++-5
-      - C_COMPILER=gcc-5
-      - CXX_COMPILER=g++-5
-      - CXXFLAGS=-std=c++11
-
-  - os: linux
-    compiler: gcc
-    env:
       - COMPILER_PACKAGE=g++-6
       - C_COMPILER=gcc-6
       - CXX_COMPILER=g++-6
@@ -60,12 +52,6 @@ matrix:
   ################
   # Linux / Clang
   ################
-
-  - os: linux
-    env:
-      - COMPILER_PACKAGE=clang-4.0
-      - C_COMPILER=clang-4.0
-      - CXX_COMPILER=clang++-4.0
 
   - os: linux
     env:
