@@ -35,7 +35,7 @@ public:
 	 *  @param  hostname
 	 *  @param  port
 	 */
-	AddressInfo(const char *hostname, uint16_t port = 5672) {
+	explicit AddressInfo(const char *hostname, uint16_t port = 5672) {
 		// store portnumber in buffer
 		auto portnumber = std::to_string(port);
 
@@ -76,6 +76,7 @@ public:
 	 *  Size of the array
 	 *  @return size_t
 	 */
+	[[nodiscard]]
 	size_t size() const {
 		return _v.size();
 	}

@@ -49,7 +49,7 @@ public:
 	 *  Constructor
 	 *  @param  watchable
 	 */
-	Monitor(Watchable *watchable)
+	explicit Monitor(Watchable *watchable)
 		: _watchable(watchable) {
 		// register with the watchable
 		_watchable->add(this);
@@ -102,7 +102,8 @@ public:
 	 *  Cast to boolean: is object in valid state?
 	 *  @return bool
 	 */
-	operator bool() const {
+	[[nodiscard]]
+	explicit operator bool() const {
 		return _watchable != nullptr;
 	}
 
@@ -118,6 +119,7 @@ public:
 	 *  Check if the object is valid
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool valid() const {
 		return _watchable != nullptr;
 	}

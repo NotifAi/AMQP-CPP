@@ -15,6 +15,8 @@
 /**
  *  Begin of namespace
  */
+#include <mutex>
+
 namespace AMQP {
 
 /**
@@ -26,7 +28,7 @@ protected:
 	 *  The filedescriptor
 	 *  @var int
 	 */
-	int _socket;
+	int        _socket;
 
 	/**
 	 *  Clean-up the socket, and call the onClosed() method
@@ -55,7 +57,7 @@ protected:
 	 *  Constructor
 	 *  @param  parent
 	 */
-	TcpExtState(TcpParent *parent)
+	explicit TcpExtState(TcpParent *parent)
 		:
 		TcpState(parent)
 		, _socket(-1) {}
@@ -64,7 +66,7 @@ protected:
 	 *  Constructor
 	 *  @param  state
 	 */
-	TcpExtState(TcpExtState *state)
+	explicit TcpExtState(TcpExtState *state)
 		:
 		TcpState(state)
 		, _socket(state->_socket) {

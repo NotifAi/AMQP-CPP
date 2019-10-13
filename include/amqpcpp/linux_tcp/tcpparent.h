@@ -82,7 +82,7 @@ public:
 	 *  @param  error
 	 *  @param  connected
 	 */
-	virtual void onError(TcpState *state, const char *message, bool connected = true) = 0;
+	virtual void onError(TcpState *state, const char *message, bool connected) = 0;
 
 	/**
 	 *  Method to be called when it is detected that the connection was lost

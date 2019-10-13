@@ -12,6 +12,8 @@
  */
 #pragma once
 
+#include <amqpcpp/login.h>
+
 /**
  *  Set up namespace
  */
@@ -56,6 +58,7 @@ private:
 	 *  The default port
 	 *  @return uint16_t
 	 */
+	[[nodiscard]]
 	uint16_t defaultport() const {
 		return _secure ? 5671 : 5672;
 	}
@@ -76,7 +79,6 @@ public:
 		// must start with ampqs:// to have a secure connection (and we also assign a different default port)
 		if (strncmp(data, "amqps://", 8) == 0) {
 			_secure = true;
-
 			// otherwise protocol must be amqp://
 		} else if (strncmp(data, "amqp://", 7) != 0) {
 			throw std::runtime_error("AMQP address should start with \"amqp://\" or \"amqps://\"");
@@ -122,15 +124,15 @@ public:
 		// the hostname is everything until the slash, check is portnumber was set
 		const char *colon = (const char *)memchr(data, ':', last - data);
 
-		// was a portnumber specified (colon must appear before the slash of the vhost)
+		// was a port number specified (colon must appear before the slash of the vhost)
 		if (colon && (!slash || colon < slash)) {
-			// a portnumber was set to
+			// a port number was set to
 			_hostname.assign(data, colon - data);
 
 			// calculate the port
 			_port = atoi(std::string(colon + 1, slash ? slash - colon - 1 : last - colon - 1).data());
 		} else {
-			// no portnumber was set
+			// no port number was set
 			_hostname.assign(data, slash ? slash - data : last - data);
 		}
 	}
@@ -141,14 +143,15 @@ public:
 	 *  @param  data
 	 *  @throws std::runtime_error
 	 */
-	Address(const char *data)
-		: Address(data, strlen(data)) {}
+	explicit Address(const char *data)
+		: Address(data, strlen(data))
+	{}
 
 	/**
 	 *  Constructor based on std::string
 	 *  @param  address
 	 */
-	Address(const std::string &address)
+	explicit Address(const std::string &address)
 		: Address(address.data(), address.size()) {}
 
 	/**
@@ -160,8 +163,7 @@ public:
 	 *  @param  secure
 	 */
 	Address(std::string host, uint16_t port, Login login, std::string vhost, bool secure = false)
-		:
-		_secure(secure)
+		: _secure(secure)
 		, _login(std::move(login))
 		, _hostname(std::move(host))
 		, _port(port)
@@ -176,6 +178,7 @@ public:
 	 *  Should we open a secure connection?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool secure() const {
 		return _secure;
 	}
@@ -184,6 +187,7 @@ public:
 	 *  Expose the login data
 	 *  @return Login
 	 */
+	[[nodiscard]]
 	const Login &login() const {
 		return _login;
 	}
@@ -192,6 +196,7 @@ public:
 	 *  Host name
 	 *  @return std::string
 	 */
+	[[nodiscard]]
 	const std::string &hostname() const {
 		return _hostname;
 	}
@@ -200,6 +205,7 @@ public:
 	 *  Port number
 	 *  @return uint16_t
 	 */
+	[[nodiscard]]
 	uint16_t port() const {
 		return _port;
 	}
@@ -208,6 +214,7 @@ public:
 	 *  The vhost to connect to
 	 *  @return std::string
 	 */
+	[[nodiscard]]
 	const std::string &vhost() const {
 		return _vhost;
 	}
@@ -304,7 +311,7 @@ public:
 			return result < 0;
 		}
 
-		// portnumber must match
+		// port number must match
 		if (_port != that._port) {
 			return _port < that._port;
 		}
@@ -331,7 +338,7 @@ public:
 		// write hostname
 		stream << address._hostname;
 
-		// do we need a special portnumber?
+		// do we need a special port number?
 		if (address._port != address.defaultport()) {
 			stream << ":" << address._port;
 		}

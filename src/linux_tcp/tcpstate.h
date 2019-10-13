@@ -34,17 +34,17 @@ protected:
 	 *  @param  parent      The parent object
 	 *  @param  handler     User-supplied handler class
 	 */
-	TcpState(TcpParent *parent)
-		:
-		_parent(parent) {}
+	explicit TcpState(TcpParent *parent)
+		: _parent(parent)
+	{}
 
 	/**
 	 *  Protected "copy" constructor
 	 *  @param  state       Original TcpState object
 	 */
-	TcpState(const TcpState *state)
-		:
-		_parent(state->_parent) {}
+	explicit TcpState(const TcpState *state)
+		: _parent(state->_parent)
+	{}
 
 public:
 	/**
@@ -52,22 +52,18 @@ public:
 	 */
 	virtual ~TcpState() = default;
 
-//    /**
-//     *  The filedescriptor of this connection
-//     *  @return int
-//     */
-//    virtual int fileno() const { return -1; }
-
 	/**
 	 *  The number of outgoing bytes queued on this connection.
 	 *  @return size_t
 	 */
+	[[nodiscard]]
 	virtual std::size_t queued() const { return 0; }
 
 	/**
 	 *  Is this a closed / dead state?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	virtual bool closed() const { return false; }
 
 	/**

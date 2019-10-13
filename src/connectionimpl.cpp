@@ -33,8 +33,7 @@ namespace AMQP {
  */
 ConnectionImpl::ConnectionImpl(Connection *parent, ConnectionHandler *handler, const Login &login
                                , const std::string &vhost)
-	:
-	_parent(parent)
+	: _parent(parent)
 	, _handler(handler)
 	, _login(login)
 	, _vhost(vhost) {

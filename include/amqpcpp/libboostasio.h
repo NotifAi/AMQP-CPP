@@ -259,11 +259,11 @@ private:
 	 *  The boost asio io_service.
 	 *  @var class boost::asio::io_service&
 	 */
-	boost::asio::io_service &_ioservice;
-	strand_sp _strand;
-	std::mutex _lock;
+	boost::asio::io_service                &_ioservice;
+	strand_sp                               _strand;
+	std::mutex                              _lock;
 	std::map<int, std::shared_ptr<Watcher>> _watchers;
-	std::shared_ptr<Timer> _timer;
+	std::shared_ptr<Timer>                  _timer;
 };
 
 

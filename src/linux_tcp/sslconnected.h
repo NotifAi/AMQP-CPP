@@ -164,7 +164,7 @@ private:
 
 			// report an error to user-space
 			_parent->onError(this, std::string(
-				"ssl protocol error: " + std::to_string(error) + " state: " + std::to_string(state)).c_str());
+				"ssl protocol error: " + std::to_string(error) + " state: " + std::to_string(state)).c_str(), true);
 
 			// ssl level error, we have to tear down the tcp connection
 			return false;

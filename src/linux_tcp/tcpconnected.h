@@ -74,7 +74,7 @@ private:
 
 		// tell the parent that it failed (but not if the connection was elegantly closed)
 		if (!_closed) {
-			_parent->onError(this, "connection lost");
+			_parent->onError(this, "connection lost", true);
 		}
 
 		// done
@@ -99,8 +99,7 @@ public:
 	 *  @param  buffer      The buffer that was already built
 	 */
 	TcpConnected(TcpExtState *state, TcpOutBuffer &&buffer)
-		:
-		TcpExtState(state)
+		: TcpExtState(state)
 		, _out(std::move(buffer))
 		, _in(4096) {
 		// if there is already an output buffer, we have to send out that first

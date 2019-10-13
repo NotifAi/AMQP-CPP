@@ -64,7 +64,7 @@ private:
 		}
 
 		// report that the connection is broken
-		_parent->onError(this, "TLS connection has been rejected");
+		_parent->onError(this, "TLS connection has been rejected", true);
 
 		// the onError method could have destructed this object
 		if (!monitor.valid()) {
@@ -82,7 +82,7 @@ private:
 	 */
 	TcpState *reportError(const Monitor &monitor) {
 		// we have an error - report this to the user
-		_parent->onError(this, "failed to setup ssl connection");
+		_parent->onError(this, "failed to setup ssl connection", true);
 
 		// stop if connection is gone
 		if (!monitor.valid()) {
