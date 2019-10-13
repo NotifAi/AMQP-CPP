@@ -27,7 +27,8 @@ namespace AMQP {
 TcpConnection::TcpConnection(TcpHandler *handler, const Address &address)
 	: _handler(handler)
 	, _state(new TcpResolver(this, address.hostname(), address.port(), address.secure()))
-	, _connection(this, address.login(), address.vhost()) {
+	, _connection(this, address.login(), address.vhost())
+{
 	// tell the handler
 	_handler->onAttached(this);
 }
@@ -36,15 +37,6 @@ TcpConnection::TcpConnection(TcpHandler *handler, const Address &address)
  *  Destructor
  */
 TcpConnection::~TcpConnection() noexcept = default;
-
-///**
-// *  The filedescriptor that is used for this connection
-// *  @return int
-// */
-//int TcpConnection::fileno() const {
-//	// pass on to the state object
-//	return _state->fileno();
-//}
 
 /**
  *  The number of outgoing bytes queued on this connection.

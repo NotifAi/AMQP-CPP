@@ -101,6 +101,7 @@ public:
 	 *  Cast to boolean: is the login set?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	operator bool() const {
 		return !_user.empty() || !_password.empty();
 	}
@@ -117,6 +118,7 @@ public:
 	 *  Retrieve the user name
 	 *  @return string
 	 */
+	[[nodiscard]]
 	const std::string &user() const {
 		return _user;
 	}
@@ -125,14 +127,16 @@ public:
 	 *  Retrieve the password
 	 *  @return string
 	 */
+	[[nodiscard]]
 	const std::string &password() const {
 		return _password;
 	}
 
 	/**
-		 *  Retrieve login mechanism string representation
-		 *  @return LoginMechanism
-		 */
+	 *  Retrieve login mechanism string representation
+	 *  @return LoginMechanism
+	 */
+	[[nodiscard]]
 	std::string mechanismRepr() const {
 		switch (_mechanism) {
 		case Mechanism::PLAIN:
@@ -148,6 +152,7 @@ public:
 	 *  String representation in SASL PLAIN mode
 	 *  @return string
 	 */
+	[[nodiscard]]
 	std::string stringRepr() const {
 		// we need an initial string
 		std::string result("\0", 1);

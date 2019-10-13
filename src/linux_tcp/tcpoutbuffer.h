@@ -72,8 +72,7 @@ public:
 	 *  @param  that
 	 */
 	TcpOutBuffer(TcpOutBuffer &&that)
-		:
-		_buffers(std::move(that._buffers))
+		: _buffers(std::move(that._buffers))
 		, _skip(that._skip)
 		, _size(that._size) {
 		// reset other object

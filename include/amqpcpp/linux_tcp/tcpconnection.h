@@ -194,12 +194,6 @@ public:
 	 */
 	virtual ~TcpConnection() noexcept;
 
-//	/**
-//	 *  The filedescriptor that is used for this connection
-//	 *  @return int
-//	 */
-//	int fileno() const;
-
 	/**
 	 *  Process the TCP connection
 	 *

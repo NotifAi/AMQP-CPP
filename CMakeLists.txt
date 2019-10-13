@@ -112,7 +112,13 @@ install(DIRECTORY include/amqpcpp/ DESTINATION include/amqpcpp
 install(FILES include/amqpcpp.h DESTINATION include)
 
 install(EXPORT ${PROJECT_NAME}Config DESTINATION cmake)
-export(TARGETS ${PROJECT_NAME} FILE ${PROJECT_NAME}Config.cmake)
+
+export(
+    TARGETS
+        ${PROJECT_NAME}
+    FILE
+        ${PROJECT_NAME}Config.cmake
+)
 
 set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
 #set(PRIVATE_LIBS "-llibamqpcc")
@@ -127,6 +133,10 @@ target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
     $<INSTALL_INTERFACE:include/>
 )
 
+
 if(AMQP-CPP_LINUX_TCP)
-    target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
+    target_link_libraries(
+        ${PROJECT_NAME}
+        PUBLIC
+        ${CMAKE_DL_LIBS})
 endif()

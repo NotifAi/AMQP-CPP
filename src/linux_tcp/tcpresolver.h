@@ -24,6 +24,10 @@
 #include "sslhandshake.h"
 #include <thread>
 #include <iostream>
+#include <mutex>
+#include <atomic>
+#include <csignal>
+#include <sys/epoll.h>
 
 /**
  *  Set up namespace
@@ -78,6 +82,18 @@ private:
 	std::thread _thread;
 
 	/**
+	 * epoll file descriptor to monitor socket connection
+	 * \var int
+	 */
+	int         _efd;
+
+	/**
+	 * pipe to interrupt while connecting
+	 * \var Pipe
+	 */
+	Pipe        _signal_pipe;
+
+	/**
 	 *  Run the thread
 	 */
 	void run() {
@@ -88,40 +104,99 @@ private:
 				throw std::runtime_error("Secure connection cannot be established: libssl.so cannot be loaded");
 			}
 
+			struct epoll_event signal_evt = {};
+
+			signal_evt.data.fd = _signal_pipe.in();
+			signal_evt.events  = EPOLLIN;
+
+			auto rc = epoll_ctl(_efd, EPOLL_CTL_ADD, _signal_pipe.in(), &signal_evt);
+			if (rc == -1) {
+				throw std::runtime_error("cannot register shutdown signal");
+			}
+
 			// get address info
 			AddressInfo addresses(_hostname.data(), _port);
+
+			bool interrupted = false;
 
 			// iterate over the addresses
 			for (size_t i = 0; i < addresses.size(); ++i) {
 				// create the socket
 				_socket = socket(addresses[i]->ai_family, addresses[i]->ai_socktype, addresses[i]->ai_protocol);
-
 				// move on on failure
 				if (_socket < 0) {
 					continue;
 				}
 
+				// turn socket into a non-blocking socket and set the close-on-exec bit
+				rc = fcntl(_socket, F_SETFL, O_NONBLOCK | O_CLOEXEC);
+				if (rc == -1) {
+					::close(_socket);
+					_socket = -1;
+					continue;
+				}
+
+				struct epoll_event conn_evt = {};
+
+				conn_evt.data.fd = _socket;
+				conn_evt.events  = EPOLLOUT | EPOLLIN | EPOLLERR;
+
 				// connect to the socket
-				if (connect(_socket, addresses[i]->ai_addr, addresses[i]->ai_addrlen) == 0) {
+				rc = connect(_socket, addresses[i]->ai_addr, addresses[i]->ai_addrlen);
+				if (rc == 0) {
 					break;
+				} else if (errno == EINPROGRESS) {
+					rc = epoll_ctl(_efd, EPOLL_CTL_ADD, _socket, &conn_evt);
+					if (rc == 0) {
+						struct epoll_event processable_evt;
+
+						int num_evts = epoll_wait(_efd, &processable_evt, 1, -1);
+						epoll_ctl(_efd, EPOLL_CTL_DEL, _socket, nullptr);
+						if (num_evts > 0) {
+							// check for shutdown signal
+							if (processable_evt.data.fd == _signal_pipe.in()) {
+								interrupted = true;
+								char ch;
+								read(_signal_pipe.in(), &ch, 1);
+								errno = ECONNABORTED;
+								break;
+							}
+
+							int retVal = -1;
+							socklen_t retValLen = sizeof(retVal);
+
+							rc = getsockopt(_socket, SOL_SOCKET, SO_ERROR, &retVal, &retValLen);
+
+							if (rc < 0) {
+								errno = ENOTCONN;
+								// ERROR, fail somehow, close socket
+							} else if (retVal != 0) {
+								// ERROR: connect did not "go through"
+								errno = ENOTCONN;
+							} else {
+								// connection went OK
+								break;
+							}
+						}
+					}
 				}
 
 				// log the error for the time being
 				_error = strerror(errno);
 
 				// close socket because connect failed
+
 				::close(_socket);
 
 				// socket no longer is valid
 				_socket = -1;
 			}
 
-			// connection succeeded, mark socket as non-blocking
-			if (_socket >= 0) {
-				// turn socket into a non-blocking socket and set the close-on-exec bit
-				fcntl(_socket, F_SETFL, O_NONBLOCK | O_CLOEXEC);
+			epoll_ctl(_efd, EPOLL_CTL_DEL, _signal_pipe.in(), nullptr);
 
-				// we want to enable "nodelay" on sockets (otherwise all send operations are s-l-o-w
+			// connection succeeded, mark socket as non-blocking
+			if (!interrupted && _socket >= 0) {
+				// we want to enable "no delay" on sockets (otherwise all send operations are s-l-o-w
 				int optval = 1;
 
 				// set the option
@@ -131,8 +206,7 @@ private:
 				set_sockopt_nosigpipe(_socket);
 #endif
 			}
-		}
-		catch (const std::runtime_error &error) {
+		} catch (const std::runtime_error &error) {
 			// address could not be resolved, we ignore this for now, but store the error
 			_error = error.what();
 		}
@@ -148,14 +222,24 @@ public:
 	 *  Constructor
 	 *  @param  parent      Parent connection object
 	 *  @param  hostname    The hostname for the lookup
-	 *  @param  portnumber  The portnumber for the lookup
+	 *  @param  port        The port number for the lookup
 	 *  @param  secure      Do we need a secure tls connection when ready?
 	 */
 	TcpResolver(TcpParent *parent, std::string hostname, uint16_t port, bool secure)
 		: TcpExtState(parent)
 		, _hostname(std::move(hostname))
 		, _secure(secure)
-		, _port(port) {
+		, _port(port)
+	{
+		_efd = epoll_create(1);
+		if (_efd == -1) {
+			throw std::runtime_error("cannot create epoll for dns resolver");
+		}
+
+		// make read-end non-blocking
+		int flags = fcntl(_signal_pipe.in(), F_GETFL, 0);
+		fcntl(_signal_pipe.in(), F_SETFL, flags | O_NONBLOCK);
+
 		// tell the event loop to monitor the filedescriptor of the pipe
 		parent->onIdle(this, _pipe.in(), readable);
 
@@ -170,17 +254,22 @@ public:
 	 *  Destructor
 	 */
 	virtual ~TcpResolver() noexcept {
+		_signal_pipe.notify();
+
 		// stop monitoring the pipe filedescriptor
 		_parent->onIdle(this, _pipe.in(), 0);
 
 		// wait for the thread to be ready
 		_thread.join();
+
+		::close(_efd);
 	}
 
 	/**
 	 *  Number of bytes in the outgoing buffer
 	 *  @return std::size_t
 	 */
+	 [[nodiscard]]
 	std::size_t queued() const override { return _buffer.size(); }
 
 	/**
@@ -209,8 +298,7 @@ public:
 			} else { // otherwise we have a valid regular tcp connection
 				return new TcpConnected(this, std::move(_buffer));
 			}
-		}
-		catch (const std::runtime_error &error) {
+		} catch (const std::runtime_error &error) {
 			// report error
 			_parent->onError(this, error.what(), false);
 

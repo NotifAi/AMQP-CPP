@@ -83,6 +83,7 @@ public:
 	 *  Retrieve the login data
 	 *  @return Login
 	 */
+	[[nodiscard]]
 	const Login &login() const {
 		return _implementation.login();
 	}
@@ -91,6 +92,7 @@ public:
 	 *  Retrieve the vhost
 	 *  @return string
 	 */
+	[[nodiscard]]
 	const std::string &vhost() const {
 		return _implementation.vhost();
 	}
@@ -175,6 +177,7 @@ public:
 	 *
 	 *  @return size_t
 	 */
+	[[nodiscard]]
 	uint32_t maxFrame() const {
 		return _implementation.maxFrame();
 	}
@@ -187,6 +190,7 @@ public:
 	 *
 	 *  @return size_t
 	 */
+	[[nodiscard]]
 	uint32_t expected() const {
 		return _implementation.expected();
 	}
@@ -195,6 +199,7 @@ public:
 	 *  Is the connection ready to accept instructions / has passed the login handshake?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool ready() const {
 		return _implementation.ready();
 	}
@@ -204,6 +209,7 @@ public:
 	 *  in the process of being closed?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool usable() const {
 		return _implementation.usable();
 	}
@@ -221,6 +227,7 @@ public:
 	 *  Retrieve the number of channels that are active for this connection
 	 *  @return std::size_t
 	 */
+	[[nodiscard]]
 	std::size_t channels() const {
 		return _implementation.channels();
 	}
@@ -230,6 +237,7 @@ public:
 	 *  meantime you can already send more instructions over it)
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool waiting() const {
 		return _implementation.waiting();
 	}

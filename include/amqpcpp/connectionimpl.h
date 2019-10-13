@@ -137,12 +137,14 @@ protected:
 	 *  Is any channel waiting for an answer on a synchronous call?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool waitingChannels() const;
 
 	/**
 	 *  Is the channel waiting for a response from the peer (server)
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool waiting() const;
 
 	/**
@@ -192,6 +194,7 @@ public:
 	 *  What is the state of the connection - is the protocol handshake completed?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool protocolOk() const {
 		// must be busy doing the connection handshake, or already connected
 		return _state == state_handshake || _state == state_connected;
@@ -225,6 +228,7 @@ public:
 	 *  protocol and login handshake were completed.
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool ready() const {
 		// state must be connected
 		return _state == state_connected;
@@ -234,6 +238,7 @@ public:
 	 *  Are we closing down?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool closing() const {
 		// state must be connected
 		return _state == state_closing;
@@ -243,6 +248,7 @@ public:
 	 *  Are we closed?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool closed() const {
 		// state must be connected
 		return _state == state_closed;
@@ -252,6 +258,7 @@ public:
 	 *  Is the connection in a usable state / not yet closed?
 	 *  @return bool
 	 */
+	[[nodiscard]]
 	bool usable() const {
 		return (_state == state_protocol || _state == state_handshake || _state == state_connected) && !_closed;
 	}
@@ -265,6 +272,7 @@ public:
 	 *  Retrieve the login data
 	 *  @return Login
 	 */
+	[[nodiscard]]
 	const Login &login() const {
 		return _login;
 	}
@@ -273,6 +281,7 @@ public:
 	 *  Retrieve the vhost
 	 *  @return string
 	 */
+	[[nodiscard]]
 	const std::string &vhost() const {
 		return _vhost;
 	}
@@ -291,6 +300,7 @@ public:
 	 *  The max frame size
 	 *  @return uint32_t
 	 */
+	[[nodiscard]]
 	uint32_t maxFrame() const {
 		return _maxFrame;
 	}
@@ -299,6 +309,7 @@ public:
 	 *  The max payload size for body frames
 	 *  @return uint32_t
 	 */
+	[[nodiscard]]
 	uint32_t maxPayload() const {
 		// 8 bytes for header and end-of-frame byte
 		return _maxFrame - 8;
@@ -308,6 +319,7 @@ public:
 	 *  The number of bytes that can best be passed to the next call to the parse() method
 	 *  @return uint32_t
 	 */
+	[[nodiscard]]
 	uint32_t expected() const {
 		return _expected;
 	}
@@ -412,6 +424,7 @@ public:
 	 *  Retrieve the amount of channels this connection has
 	 *  @return std::size_t
 	 */
+	[[nodiscard]]
 	std::size_t channels() const {
 		return _channels.size();
 	}

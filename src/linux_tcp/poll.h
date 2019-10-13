@@ -38,7 +38,7 @@ public:
 	 *  Constructor
 	 *  @param  fd      the filedescriptor that we're waiting on
 	 */
-	Poll(int fd)
+	explicit Poll(int fd)
 		: _socket(fd) {
 		// initialize the set
 		FD_ZERO(&_set);
