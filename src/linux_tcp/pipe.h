@@ -49,7 +49,9 @@ public:
 			pipe(_fds) == 0 &&
 			fcntl(_fds[0], F_SETFD, FD_CLOEXEC) == 0 &&
 			fcntl(_fds[1], F_SETFD, FD_CLOEXEC) == 0
-		) return;
+		) {
+			return;
+		}
 #endif
 
 		// something went wrong
@@ -84,7 +86,7 @@ public:
 		char byte = 0;
 
 		// send one byte over the pipe - this will wake up the other thread
-		return write(_fds[1], &byte, 1) == 1;
+		return write(out(), &byte, 1) == 1;
 	}
 };
 
