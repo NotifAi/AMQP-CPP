@@ -16,18 +16,19 @@
 /**
  *  Dependencies
  */
-#include "pipe.h"
-#include "tcpstate.h"
-#include "tcpclosed.h"
-#include "tcpconnected.h"
-#include "openssl.h"
-#include "sslhandshake.h"
 #include <thread>
 #include <iostream>
 #include <mutex>
 #include <atomic>
 #include <csignal>
 #include <sys/epoll.h>
+
+#include "pipe.h"
+#include "tcpstate.h"
+#include "tcpclosed.h"
+#include "tcpconnected.h"
+#include "openssl.h"
+#include "sslhandshake.h"
 
 /**
  *  Set up namespace
@@ -129,7 +130,14 @@ private:
 				}
 
 				// turn socket into a non-blocking socket and set the close-on-exec bit
-				rc = fcntl(_socket, F_SETFL, O_NONBLOCK | O_CLOEXEC);
+				rc = fcntl(_socket, F_GETFL, 0);
+				if (rc == -1) {
+					::close(_socket);
+					_socket = -1;
+					continue;
+				}
+
+				rc = fcntl(_socket, F_SETFL, (unsigned int) rc | O_NONBLOCK | O_CLOEXEC);
 				if (rc == -1) {
 					::close(_socket);
 					_socket = -1;
@@ -160,22 +168,19 @@ private:
 								read(_signal_pipe.in(), &ch, 1);
 								errno = ECONNABORTED;
 								break;
-							}
-
-							int retVal = -1;
-							socklen_t retValLen = sizeof(retVal);
-
-							rc = getsockopt(_socket, SOL_SOCKET, SO_ERROR, &retVal, &retValLen);
-
-							if (rc < 0) {
-								errno = ENOTCONN;
-								// ERROR, fail somehow, close socket
-							} else if (retVal != 0) {
-								// ERROR: connect did not "go through"
-								errno = ENOTCONN;
 							} else {
-								// connection went OK
-								break;
+								int retVal = -1;
+								socklen_t retValLen = sizeof(retVal);
+
+								rc = getsockopt(_socket, SOL_SOCKET, SO_ERROR, &retVal, &retValLen);
+
+								if (rc < 0 || retVal != 0) {
+									// ERROR: connect did not "go through"
+									errno = ENOTCONN;
+								} else {
+									// connection went OK
+									break;
+								}
 							}
 						}
 					}
@@ -205,15 +210,14 @@ private:
 #ifdef AMQP_CPP_USE_SO_NOSIGPIPE
 				set_sockopt_nosigpipe(_socket);
 #endif
+				// notify the master thread by sending a byte over the pipe
+				if (!_pipe.notify()) {
+					_error = strerror(errno);
+				}
 			}
 		} catch (const std::runtime_error &error) {
 			// address could not be resolved, we ignore this for now, but store the error
 			_error = error.what();
-		}
-
-		// notify the master thread by sending a byte over the pipe
-		if (!_pipe.notify()) {
-			_error = strerror(errno);
 		}
 	}
 
@@ -238,7 +242,16 @@ public:
 
 		// make read-end non-blocking
 		int flags = fcntl(_signal_pipe.in(), F_GETFL, 0);
-		fcntl(_signal_pipe.in(), F_SETFL, flags | O_NONBLOCK);
+		if (flags == - 1) {
+			::close(_efd);
+			throw std::runtime_error("cannot get pipe flags");
+		}
+
+		flags = fcntl(_signal_pipe.in(), F_SETFL, (unsigned int)flags | O_NONBLOCK);
+		if (flags == - 1) {
+			::close(_efd);
+			throw std::runtime_error("cannot set pipe flags");
+		}
 
 		// tell the event loop to monitor the filedescriptor of the pipe
 		parent->onIdle(this, _pipe.in(), readable);
@@ -256,11 +269,11 @@ public:
 	virtual ~TcpResolver() noexcept {
 		_signal_pipe.notify();
 
-		// stop monitoring the pipe filedescriptor
-		_parent->onIdle(this, _pipe.in(), 0);
-
 		// wait for the thread to be ready
 		_thread.join();
+
+		// stop monitoring the pipe filedescriptor
+		_parent->onIdle(this, _pipe.in(), 0);
 
 		::close(_efd);
 	}
