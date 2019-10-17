@@ -167,6 +167,11 @@ private:
 								char ch;
 								read(_signal_pipe.in(), &ch, 1);
 								errno = ECONNABORTED;
+
+								// if connection was aborted we should close socket beforehand otherwise
+								// TcpExtState confuses client by invoking onLost
+								::close(_socket);
+								_socket = -1;
 								break;
 							} else {
 								int retVal = -1;
